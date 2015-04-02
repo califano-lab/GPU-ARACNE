@@ -3,10 +3,10 @@ CC := /usr/local/cuda/bin/nvcc # This is the main compiler
 SRCDIR := src
 BUILDDIR := build
 TARGET := bin/runner  
-SRCEXT := cpp
+SRCEXT := cu
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -Xcompiler "-std=c++0x" -g  
+CFLAGS := -g #-Xcompiler "-std=c++0x" -g  
 LIB := 
 INC := -I include -arch=sm_30
 
@@ -20,7 +20,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 
 # Tests
 tester:
-	$(CC) $(CFLAGS) test/tester.cpp $(INC) $(LIB) -o bin/tester
+	$(CC) $(CFLAGS) test/tester.cu $(INC) $(LIB) -o bin/tester
 
 clean:
 	  @echo " Cleaning..."; 
