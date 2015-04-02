@@ -24,6 +24,6 @@ tester:
 
 clean:
 	  @echo " Cleaning..."; 
-	    @echo " $(RM) -r $(BUILDDIR) $(TARGET) *~"; $(RM) -r $(BUILDDIR) $(TARGET) *~
+	    @echo " $(RM) -r $(BUILDDIR) $(TARGET) src/*~"; $(RM) -r $(BUILDDIR) $(TARGET) src/*~
 
 .PHONY: clean
