@@ -60,9 +60,9 @@ public:
     {
         if (this->data == rhs.data) return *this;
         for (int i = 0; i < nRows; i++){
-            delete(data[i]);
+            delete[] data[i];
         }
-        delete(data);
+        delete[] data;
         nRows = rhs.nRows;
         nCols = rhs.nCols;
         data = new T*[nRows];
@@ -79,9 +79,9 @@ public:
     __CUDA__ ~MiMatrix()
     {
         for (int i = 0; i < nRows; i++){
-            delete(data[i]);
+            delete[] data[i];
         }
-        delete(data);
+        delete[] data;
     }
 
     // check interaction
