@@ -4,11 +4,12 @@
 #define INIT_VALUE -1
 #define __CUDA__ __host__ __device__
 //#define __CUDA__ 
+//matrix implemented in 1-D array
 template <typename T>
 class MiMatrix
 {
 private:
-    T **data;
+    T *data;
     unsigned int nRows;
     unsigned int nCols;
 
@@ -18,11 +19,10 @@ public:
     {
         nRows = size;
         nCols = size;
-        data = new T*[size];
-        for (int i = 0; i < size; i++){
-            data[i] = new T[size];
-            for (int j = 0; j < size; j++){
-                data[i][j] = INIT_VALUE;
+        data = new T[nRows * nCols];
+        for (int i = 0; i < nRows; i++){
+            for (int j = 0; j < nCols; j++){
+                data[i * nRows + j] = INIT_VALUE;
             }
         }
     }
@@ -32,11 +32,10 @@ public:
     {
         nRows = m;
         nCols = n;
-        data = new T*[m];
-        for (int i = 0; i < m; i++){
-            data[i] = new T[n];
-            for (int j = 0; j < n; j++){
-                data[i][j] = INIT_VALUE;
+        data = new T[nRows * nCols];
+        for (int i = 0; i < nRows; i++){
+            for (int j = 0; j < nCols; j++){
+                data[i * nRows + j] = INIT_VALUE;
             }
         }
     }
@@ -46,11 +45,10 @@ public:
     {
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        data = new T*[nRows];
+        data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
-            data[i] = new T[nCols];
             for (int j = 0; j < nCols; j++){
-                data[i][j] = INIT_VALUE;
+                data[i * nRows + j] = INIT_VALUE;
             }
         }
     }
@@ -59,17 +57,13 @@ public:
     __CUDA__ MiMatrix<T>& operator = (const MiMatrix<T>& rhs)
     {
         if (this->data == rhs.data) return *this;
-        for (int i = 0; i < nRows; i++){
-            delete[] data[i];
-        }
         delete[] data;
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        data = new T*[nRows];
+        data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
-            data[i] = new T[nCols];
             for (int j = 0; j < nCols; j++){
-                data[i][j] = INIT_VALUE;
+                data[i * nRows + j] = INIT_VALUE;
             }
         }
         return *this;
@@ -78,16 +72,33 @@ public:
     // destructor
     __CUDA__ ~MiMatrix()
     {
-        for (int i = 0; i < nRows; i++){
-            delete[] data[i];
-        }
         delete[] data;
     }
 
     // check interaction
     __CUDA__ bool hasCorrelation(unsigned int geneIdx1, unsigned int geneIdx2)
     {
-        return !(data[geneIdx1][geneIdx2] < 0);
+        return !(data[geneIdx1 * nRows + geneIdx2] < 0);
+    }
+
+    __CUDA__ void setValue(unsigned int geneIdx1, unsigned int geneIdx2, T val)
+    {
+        data[geneIdx1 * nRows + geneIdx2] = val;
+    }
+
+    __CUDA__ T& element(unsigned int geneIdx1, unsigned int geneIdx2)
+    {
+        return data[geneIdx1 * nRows + geneIdx2];
+    }
+
+    const __CUDA__ T* memAddr()
+    {
+        return data;
+    }
+
+    __CUDA__ size_t size()
+    {
+        return (size_t)(sizeof(T) * nRows * nCols);
     }
 
 };
