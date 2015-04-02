@@ -7,14 +7,17 @@ template <typename T>
 class MiMatrix
 {
 private:
-    std::vector<std::vector<T>> data;
-    std::map<unsigned int, unsigned int> gene2Idx;
+    std::vector<std::vector<T>> *data;
     unsigned int nRows;
     unsigned int nCols;
 
 public:
     // constructor square matrix
-    __host__ __device__ MiMatrix(unsigned int size);
+    __host__ __device__ MiMatrix(unsigned int size)
+    {
+        nRows = size;
+        nCols = size;
+        data = new std::vector<std::vector<T>>(size)
     // constructor general 2-D matrix
     __host__ __device__ MiMatrix(unsigned int m, unsigned int n);
     // copy constructor
