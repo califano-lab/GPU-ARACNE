@@ -54,7 +54,7 @@ __CUDA__ Matrix::Matrix(const Matrix& rhs)
 }
 
     // overloading assignment operator
-__CUDA__ Matrix& Matrix::operator = (const Matrix& rhs)
+__host__ Matrix& Matrix::operator = (const Matrix& rhs)
 {
     if (this->data == rhs.data) return *this;
     delete[] data;
@@ -72,7 +72,12 @@ __CUDA__ Matrix& Matrix::operator = (const Matrix& rhs)
 // destructor
 __CUDA__ Matrix::~Matrix()
 {
-    delete[] data;
+    int status;
+    cuPointerGetAttribute((void *)&status, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, data);
+    if (status == CU_MEMORYTYPE_HOST) 
+        delete[] data;
+    else
+        cudaFree(data);
 }
 
 __host__ void Matrix::print()

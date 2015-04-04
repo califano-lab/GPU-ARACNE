@@ -17,12 +17,13 @@ int main(int argc, char *argv[])
     cout << "start ranking" << endl;
     //mat->print();
     clock_t start = clock();
-    mat->rank();
+    Matrix *d_mat = mat->getRankMatrix();
     clock_t stop = clock();
     //mat->print();
     cout << "done ranking" << endl;
     cout << "Time taken: " << (float)(stop - start)/CLOCKS_PER_SEC << endl;
     delete(mat);
+    delete(d_mat);
     
     return 0;
 }
