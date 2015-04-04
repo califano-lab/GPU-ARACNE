@@ -8,7 +8,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g #-Xcompiler "-std=c++0x" -g  
 LIB := 
-INC := -I src -I include -arch=sm_30
+INC := -I src -I include -arch=sm_35
 
 $(TARGET): $(OBJECTS)
 	  @echo " Linking..."
@@ -20,7 +20,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 
 # Tests
 tester:
-	$(CC) $(CFLAGS) test/tester.cu $(INC) $(LIB) -o bin/tester
+	$(CC) $(CFLAGS) test/tester.cu src/Matrix.cu $(INC) $(LIB) -o bin/tester
 
 clean:
 	  @echo " Cleaning..."; 

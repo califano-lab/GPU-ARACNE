@@ -1,8 +1,8 @@
 #include <iostream>
-#include "MiMatrix.hpp"
+#include "Matrix.hpp"
 int main()
 {
-    MiMatrix<float> *mat = new MiMatrix<float>(2000, 20000);
+    Matrix *mat = new Matrix(2000, 20000);
     mat->element(1,1) = 10.;
     if (mat->hasCorrelation(1,1)){
         std::cout << "has correlation" << std::endl;
