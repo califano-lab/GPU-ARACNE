@@ -4,20 +4,6 @@
 //#define __CUDA__ 
 //matrix implemented in 1-D array
 
-__global__ void rankRow(float *dataStart, unsigned int nRows, unsigned int nCols)
-{
-    unsigned int rowIdx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (rowIdx >= nRows) return;
-    float *arrayStart = dataStart + rowIdx * nCols; 
-    float *arrayEnd = arrayStart + nCols;
-
-        // work here
-        //
-        //
-        //
-        // work here
-}
-
 // constructor square matrix
 __CUDA__ Matrix::Matrix(unsigned int size)
 {
@@ -87,4 +73,15 @@ __CUDA__ Matrix& Matrix::operator = (const Matrix& rhs)
 __CUDA__ Matrix::~Matrix()
 {
     delete[] data;
+}
+
+__host__ void Matrix::print()
+{
+    for (int i = 0; i < nRows; i++){
+        for (int j = 0; j < nCols; j++){
+            std::cout << this->element(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 }

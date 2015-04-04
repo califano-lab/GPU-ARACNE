@@ -1,12 +1,12 @@
 #ifndef MATRIX_H
 #define MATRIX_H
+#include <cstdlib>
 #include <cuda.h>
 #include <thrust/sort.h>
 #define INIT_VALUE -1
 #define __CUDA__ __host__ __device__
 //#define __CUDA__ 
 //matrix implemented in 1-D array
-__global__ void rankRow(float *dataStart, unsigned int nRows, unsigned int nCols);
 
 class Matrix
 {
@@ -48,10 +48,23 @@ public:
     // rank each row
     __host__ void rank()
     {
-        unsigned int threadsPerBlock = 512;
-        unsigned int numBlocks = ceil(nRows / (1.0 * threadsPerBlock));
-        // it will change data (mutating)
-        rankRow<<<numBlocks, threadsPerBlock>>>(data, nRows, nCols);
+        // all run on CPU with thrust facility on GPU
+        Matrix *helperMatrix = new Matrix(nRows, nCols);
+        for (int i = 0; i < nRows; i++){
+            for (int j = 0; j < nCols; j++){
+                helperMatrix->element(i, j) = j;
+            }
+        }
+        for (int i = 0; i < nRows; i++){
+            thrust::stable_sort_by_key(this->data + i * nCols, 
+                    this->data + i * nCols + nCols, helperMatrix->data + i * nCols);
+        }
+        for (int i = 0; i < nRows; i++){
+            for (int j = 0; j < nCols; j++){
+                this->element(i, helperMatrix->element(i, j)) = j;
+            }
+        }
+        delete helperMatrix;
     } 
     
     __CUDA__ float& element(unsigned int geneIdx1, unsigned int geneIdx2)
@@ -79,6 +92,7 @@ public:
         return nCols;
     }
 
+    __host__ void print();
 };
 
 
