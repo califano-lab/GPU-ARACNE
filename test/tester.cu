@@ -5,25 +5,35 @@
 using namespace std;
 int main(int argc, char *argv[])
 {
+    if (argc != 3) {
+        perror("need two more arguments!");
+        exit(1);
+    }
     int nGenes = atoi(argv[1]);
     int nSamples = atoi(argv[2]);
     srand(time(NULL));
-    Matrix *mat = new Matrix(nGenes, nSamples);
+    Matrix<float> *h_mat = new Matrix<float>(nGenes, nSamples);
     for (int i = 1; i < nGenes; i++){
         for (int j = 0; j < nSamples; j++){
-            mat->element(i,j) = (rand() % 100) / 20.0;
+            h_mat->element(i,j) = (rand() % 100) / 20.0;
         }
     }
+//    h_mat->print();
     cout << "start ranking" << endl;
-    //mat->print();
     clock_t start = clock();
-    Matrix *d_mat = mat->getRankMatrix();
+    float *d_arr = h_mat->getRankMatrix();
     clock_t stop = clock();
-    //mat->print();
+    float *h_arr = new float[h_mat->size()];
+    cudaMemcpy((void *)h_arr, (void *)d_arr, h_mat->size(), cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+    Matrix<float> *h_ret = new Matrix<float>(nGenes, nSamples, h_arr);
+
+//    h_ret->print();
     cout << "done ranking" << endl;
     cout << "Time taken: " << (float)(stop - start)/CLOCKS_PER_SEC << endl;
-    delete(mat);
-    delete(d_mat);
+    delete(h_mat);
+    cudaFree(d_arr);
+    delete(h_ret);
     
     return 0;
 }

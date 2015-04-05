@@ -20,10 +20,10 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 
 # Tests
 tester:
-	$(CC) $(CFLAGS) test/tester.cu src/Matrix.cu $(INC) $(LIB) -o bin/tester
+	$(CC) $(CFLAGS) test/tester.cu  $(INC) $(LIB) -o bin/tester
 
 clean:
 	  @echo " Cleaning..."; 
-	    @echo " $(RM) -r $(BUILDDIR) $(TARGET) src/*~"; $(RM) -r $(BUILDDIR) $(TARGET) src/*~
+	    @echo " $(RM) -r $(BUILDDIR) $(TARGET) src/*~"; $(RM) -r $(BUILDDIR) $(TARGET) src/*~ *~
 
 .PHONY: clean
