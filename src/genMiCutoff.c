@@ -9,16 +9,9 @@
 #include <iostream>
 #include <stdlib.h> 
 #include <stdio.h>
-//#include <curand.h>
-//#include <curand_kernel.h>
 #include <time.h> 
 
 #include "genMiCutoff.hpp"
-
-using namespace std;
-
-#define NPERM 100000 // number of randomization
-#define NTOPPERCENT 10 // percentage of top MI's used to fitting
 
 //__device__ __host__ 
 int* genRandIntArray ( int array[], const int N )
@@ -27,7 +20,7 @@ int* genRandIntArray ( int array[], const int N )
    // struct timeval tv;
    // gettimeofday( &tv, NULL);
    // int usec = tv.tv_usec ; 
-   // srand48(usec);
+   // srand(usec);
 
    printf("Total: %d\n", N);
      
@@ -69,8 +62,7 @@ float calMIap_d (int *X, int *Y, const int N){
    
 }
 
-
-float calMIcutCoeff (const int Nsmp, const int NPERM) {
+float calMIcutCoeff (const int Nsmp, const int Nperm) {
     // generate  permutation arrays
     int *h_X;
     h_X = (int * ) malloc( sizeof (int) * Nsmp);
@@ -80,44 +72,44 @@ float calMIcutCoeff (const int Nsmp, const int NPERM) {
     h_Y = (int * ) malloc( sizeof (int) * Nsmp);
     h_Y = genRandIntArray( h_Y, Nsmp );
    
-    // Grid size and block Size
-    int numBlockx = 1; // number of pairs 
-    int numBlocky = 1;
-
-    int tileSize = 5;
-    int numThreadXPerBlock = Nsmp / tileSize ; 
-    int numThreadYPerBlock = Nsmp / tileSize ; 
-
-    // allocate memory, and copy the data over:
-
-    int *h_mi;  
-    h_mi = (float *) malloc( sizeof( float) * numBlockx * numBlocky);  
-    
-    int *d_X,  *d_Y;
-    int *d_mi;
-     
-    GPU_CHECKERROR( cudaMalloc ((void **) &d_X, Nsmp * sizeof (int)) );
-    GPU_CHECKERROR( cudaMalloc ((void **) &d_Y, Nsmp * sizeof (int)) );
-      
-    GPU_CHECKERROR( cudaMemcpy(d_X, h_X, Nsmp * sizeof(int), cudaMemcpyHostToDevice) ) ;
-    GPU_CHECKERROR( cudaMemcpy(d_Y, h_Y, Nsmp * sizeof(int), cudaMemcpyHostToDevice) ) ;
-        
-    // launch the kernel:
-
-    calMIap_d <<< (numBlockx, numBlocky, 1), (numThreadXPerBlock, numThreadYPerBlock, 1) >>> ( float * d_mi, int * d_X, int * d_Y, int Nsmp);
-    
-
-    // copy results back
-    GPU_CHECKERROR( cudaDeviceSynchronize() );
-    GPU_CHECKERROR( cudaMemcpy(h_mi,d_mi, numBlockx * numBlocky * sizeof(float), cudaMemcpyDeviceToHost) ) ;
-
-    // Postprocessing to generate cutoff
-    free(h_X); 
-    free(h_Y); 
-    free(h_mi); 
-    cudafree(d_X);
-    cudafree(d_Y);
-    cudafree(d_mi);
+//    // Grid size and block Size
+//    int numBlockx = 1; // number of pairs 
+//    int numBlocky = 1;
+//
+//    int tileSize = 5;
+//    int numThreadXPerBlock = Nsmp / tileSize ; 
+//    int numThreadYPerBlock = Nsmp / tileSize ; 
+//
+//    // allocate memory, and copy the data over:
+//
+//    int *h_mi;  
+//    h_mi = (float *) malloc( sizeof( float) * numBlockx * numBlocky);  
+//    
+//    int *d_X,  *d_Y;
+//    int *d_mi;
+//     
+//    GPU_CHECKERROR( cudaMalloc ((void **) &d_X, Nsmp * sizeof (int)) );
+//    GPU_CHECKERROR( cudaMalloc ((void **) &d_Y, Nsmp * sizeof (int)) );
+//      
+//    GPU_CHECKERROR( cudaMemcpy(d_X, h_X, Nsmp * sizeof(int), cudaMemcpyHostToDevice) ) ;
+//    GPU_CHECKERROR( cudaMemcpy(d_Y, h_Y, Nsmp * sizeof(int), cudaMemcpyHostToDevice) ) ;
+//        
+//    // launch the kernel:
+//
+//    calMIap_d <<< (numBlockx, numBlocky, 1), (numThreadXPerBlock, numThreadYPerBlock, 1) >>> ( float * d_mi, int * d_X, int * d_Y, int Nsmp);
+//    
+//
+//    // copy results back
+//    GPU_CHECKERROR( cudaDeviceSynchronize() );
+//    GPU_CHECKERROR( cudaMemcpy(h_mi,d_mi, numBlockx * numBlocky * sizeof(float), cudaMemcpyDeviceToHost) ) ;
+//
+//    // Postprocessing to generate cutoff
+//    free(h_X); 
+//    free(h_Y); 
+//    free(h_mi); 
+//    cudafree(d_X);
+//    cudafree(d_Y);
+//    cudafree(d_mi);
 
     return 0.0;
 }
