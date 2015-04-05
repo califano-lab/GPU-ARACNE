@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
             h_mat->element(i,j) = (rand() % 100) / 20.0;
         }
     }
-    h_mat->print();
+    //h_mat->print();
     cout << "start ranking" << endl;
     clock_t start = clock();
     float *d_arr = h_mat->getRankMatrix();
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     cudaDeviceSynchronize();
     Matrix<float> *h_ret = new Matrix<float>(nGenes, nSamples, h_arr);
 
-    h_ret->print();
+    //h_ret->print();
     cout << "done ranking" << endl;
     cout << "Time taken: " << (float)(stop - start)/CLOCKS_PER_SEC << endl;
     delete(h_mat);

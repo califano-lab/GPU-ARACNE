@@ -133,7 +133,7 @@ public:
         T *d_data;
         cudaMalloc((void **)&d_data, size());
         HANDLE_ERROR(cudaMemcpy((void *)d_data, (void *)data, size(), cudaMemcpyHostToDevice));
-        unsigned int tabletSize = 256;
+        unsigned int tabletSize = 128;
         unsigned int nRows_cpy = nRows;
         unsigned int realTabletSize; 
         cudaStream_t stream0;
@@ -145,8 +145,8 @@ public:
             } else {
                 realTabletSize = nRows_cpy;
             }
-            dim3 threadsPerBlock(256, 1, 1);
-            dim3 blocksPerGrid((unsigned int)ceil(realTabletSize/(1.0 * 256)), 1, 1);
+            dim3 threadsPerBlock(128, 1, 1);
+            dim3 blocksPerGrid((unsigned int)ceil(realTabletSize/(1.0 * 128)), 1, 1);
             rankRow<<<blocksPerGrid, threadsPerBlock, 0, stream0>>>
                 (d_data + i * tabletSize * nCols, realTabletSize, nCols);
             HANDLE_ERROR(cudaGetLastError());
