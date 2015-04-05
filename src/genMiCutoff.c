@@ -70,9 +70,8 @@ float calMIap_d (int *X, int *Y, const int N){
 }
 
 
-int main() {
+float calMIcutCoeff (const int Nsmp, const int NPERM) {
     // generate  permutation arrays
-    const int Nsmp = 10;
     int *h_X;
     h_X = (int * ) malloc( sizeof (int) * Nsmp);
     h_X = genRandIntArray( h_X, Nsmp );
@@ -120,6 +119,6 @@ int main() {
     cudafree(d_Y);
     cudafree(d_mi);
 
-    return 0;
+    return 0.0;
 }
 
