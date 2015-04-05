@@ -21,6 +21,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 # Tests
 tester:
 	$(CC) $(CFLAGS) test/tester.cu  $(INC) $(LIB) -o bin/tester
+	$(CC) $(CFLAGS) test/jingTester.cu  $(INC) $(LIB) -o bin/jingTester
 
 clean:
 	  @echo " Cleaning..."; 
