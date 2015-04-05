@@ -53,20 +53,24 @@ int* genRandIntArray ( int array[], const int N )
    return a;
 }
 
+float calMIcutoff ( float * mi, const int  NTOPPERCENT, const float pCut )
+{
+  float coeff = [2];
+  return coeff;
+}
+
 __global__
 float calMIap_d (int *X, int *Y, const int N){
-//
+  //
   
  if ( gridIdx.x > N | gridIdx.y > N) return; 
 
  // init shared mem;
- 
    
 }
 
 
 int main() {
-    
     // generate  permutation arrays
     const int Nsmp = 10;
     int *h_X;
@@ -108,7 +112,7 @@ int main() {
     GPU_CHECKERROR( cudaDeviceSynchronize() );
     GPU_CHECKERROR( cudaMemcpy(h_mi,d_mi, numBlockx * numBlocky * sizeof(float), cudaMemcpyDeviceToHost) ) ;
 
-    // 
+    // Postprocessing to generate cutoff
     free(h_X); 
     free(h_Y); 
     free(h_mi); 
