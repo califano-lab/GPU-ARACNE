@@ -2,9 +2,11 @@
 #include <cstdlib>
 #include <ctime>
 #include "Matrix.hpp"
+#include "InputOutput.hpp"
 using namespace std;
 int main(int argc, char *argv[])
 {
+   /* 
     if (argc != 3) {
         perror("need two more arguments!");
         exit(1);
@@ -34,6 +36,13 @@ int main(int argc, char *argv[])
     delete(h_mat);
     cudaFree(d_arr);
     delete(h_ret);
-    
+    */
+    Matrix<float> *mat;
+    clock_t start = clock();
+    loadMatrix(&mat, "data/brca-expmat-mini.csv",20531,256);
+    clock_t stop = clock();
+    mat->print();
+    delete(mat);
+    cout << "Time taken: " << (float)(stop - start)/CLOCKS_PER_SEC << endl;
     return 0;
 }

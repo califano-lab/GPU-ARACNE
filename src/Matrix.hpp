@@ -89,13 +89,13 @@ public:
         data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
-                data[i * nCols + j] = INIT_VALUE;
+                data[i * nCols + j] = rhs.data[i * nCols + j];
             }
         }
     }
     
     // overloading assignment operator
-    __CUDA__ Matrix& operator = (const Matrix& rhs)
+    __CUDA__ Matrix& operator = (const Matrix<T>& rhs)
     {
         if (this->data == rhs.data) return *this;
         delete[] data;
@@ -104,7 +104,7 @@ public:
         data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
-                data[i * nCols + j] = INIT_VALUE;
+                data[i * nCols + j] = rhs.data[i * nCols + j];
             }
         }
         return *this;
