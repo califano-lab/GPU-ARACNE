@@ -22,7 +22,7 @@
 
 template<typename T>
 __global__
-void DPI(T *miData, unsigned int nRows, unsigned int nCols, bool *decision)
+void label(T *miData, unsigned int nRows, unsigned int nCols, bool *decision)
 {
     unsigned int TF1 = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int TF2 = blockIdx.y * blockDim.y + threadIdx.y;
@@ -40,4 +40,22 @@ void DPI(T *miData, unsigned int nRows, unsigned int nCols, bool *decision)
     // handle symmetry issues
 }
 
+template<typename T>
+__global__
+void cut(T *miData, unsigned int nRows, unsigned int nCols, bool *decision){}
+
+template<typename T>
+__host__
+void pruneGraph(T *rawGraph, unsigned int nRows, unsigned int nCols, unsigned int *d_TFGeneIdx)
+{
+    bool *decsion = new bool[nTFs * nGenes];
+    // initialization here
+    dim3 blockDim(8, 8, 16);
+    dim3 gridDim(ceil(nRows / 8.0), ceil(nRows / 8.0), ceil(nCols / 16.0));
+    label<<<gridDim, blockDim>>>(rawGraph, nRows, nCols, decision);
+    dim3 blockDim(16, 64, 1);
+    dim3 gridDim(ceil(nRows / 16.0), ceil(nCols / 64.0), 1);
+    cut<<<gridDim, blockDim>>>(rawGraph, nRows, nCols, decision);
+    delete decision;
+}
 #endif

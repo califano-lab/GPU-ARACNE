@@ -2,6 +2,7 @@
 #define TEST
 #include "InputOutput.hpp"
 #include "Matrix.hpp"
+#include "pruneGraph.hpp"
 #include <cstdlib>
 #include <cstdio>
 
@@ -49,8 +50,11 @@ int main(int argc, char *argv[])
 
 
     // build network
+    // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array
+    float *rawGraph = NULL; 
     
-    // dpi to prune network
+    // DPI to prune network
+    pruneGraph(rawGraph, nTFs, nGenes, d_TFGeneIdx);
     
     // output data
 
