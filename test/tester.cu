@@ -1,10 +1,9 @@
 // basic viable unit of execution.
+#define TEST
 #include "InputOutput.hpp"
 #include "Matrix.hpp"
 #include <cstdlib>
 #include <cstdio>
-
-#define TEST
 
 // argument list: 
 // <TFfile> <datafile> <nTFs> <nGenes> <nSamples> <nBootstraps>
@@ -32,6 +31,10 @@ int main(int argc, char *argv[])
     Matrix<std::string> *geneLabels;
     loadMatrix(&dataMat, &geneLabels, dataFilename, nGenes, nSamples);
     
+    // create TF to genes index mapping
+    unsigned int *d_TFGeneIdx;
+    createMapping(&d_TFGeneIdx, TFList, geneLabels, nTFs, nGenes);
+
     // rank data
     float *d_rankMat = dataMat->getRankMatrix();
 #ifdef TEST
@@ -55,5 +58,6 @@ int main(int argc, char *argv[])
     delete TFList;
     delete geneLabels;
     cudaFree(d_rankMat);
+    cudaFree(d_TFGeneIdx);
     return 0;
 }

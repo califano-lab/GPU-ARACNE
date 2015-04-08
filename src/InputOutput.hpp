@@ -7,6 +7,8 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <map>
+#include "util.hpp"
 using namespace std;
 
 void loadMatrix(Matrix<float> **mat, Matrix<string> **geneLabels,
@@ -45,5 +47,24 @@ void loadMatrix(Matrix<float> **mat, Matrix<string> **geneLabels,
     fs.close();
 }
 
-
+void createMapping(unsigned int **d_TFGeneIdx, Matrix<string> *TFList, 
+        Matrix<string> *geneLabels, unsigned int nTFs, unsigned int nGenes)
+{
+    unsigned int *h_TFGeneIdx = new unsigned int[nTFs];
+    map<string, unsigned int> genePool;
+    for (unsigned int i = 0; i < nGenes; i++){
+        genePool[geneLabels->element(i, 0)] = i;
+    }
+    for (unsigned int i = 0; i < nTFs; i++){
+        h_TFGeneIdx[i] = genePool[TFList->element(i, 0)];
+    }
+#ifdef TEST
+    for (int i = 0; i < nTFs; i++){
+        cout << h_TFGeneIdx[i] << endl;
+    }
+#endif
+    HANDLE_ERROR (cudaMalloc((void **)d_TFGeneIdx, sizeof(unsigned int) * nTFs));
+    HANDLE_ERROR (cudaMemcpy((void *)*d_TFGeneIdx, h_TFGeneIdx, sizeof(unsigned int) *nTFs, cudaMemcpyHostToDevice));
+    HANDLE_ERROR (cudaDeviceSynchronize());
+}
 #endif
