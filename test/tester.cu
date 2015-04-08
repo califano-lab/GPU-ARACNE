@@ -1,48 +1,59 @@
-#include <iostream>
-#include <cstdlib>
-#include <ctime>
-#include "Matrix.hpp"
+// basic viable unit of execution.
 #include "InputOutput.hpp"
-using namespace std;
+#include "Matrix.hpp"
+#include <cstdlib>
+#include <cstdio>
+
+#define TEST
+
+// argument list: 
+// <TFfile> <datafile> <nTFs> <nGenes> <nSamples> <nBootstraps>
 int main(int argc, char *argv[])
 {
-   /* 
-    if (argc != 3) {
-        perror("need two more arguments!");
+    // argument check
+    if (argc != 7) {
+        std::cerr << "Usage: " << argv[0] 
+            << " <TFfile> <datafile> <nTFs> <nGenes> <nSamples> <nBootstraps>" << std::endl;  
         exit(1);
-    }
-    int nGenes = atoi(argv[1]);
-    int nSamples = atoi(argv[2]);
-    srand(time(NULL));
-    Matrix<float> *h_mat = new Matrix<float>(nGenes, nSamples);
-    for (int i = 1; i < nGenes; i++){
-        for (int j = 0; j < nSamples; j++){
-            h_mat->element(i,j) = (rand() % 100) / 20.0;
-        }
-    }
-    //h_mat->print();
-    cout << "start ranking" << endl;
-    clock_t start = clock();
-    float *d_arr = h_mat->getRankMatrix();
-    clock_t stop = clock();
-    float *h_arr = new float[h_mat->size()];
-    cudaMemcpy((void *)h_arr, (void *)d_arr, h_mat->size(), cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
-    Matrix<float> *h_ret = new Matrix<float>(nGenes, nSamples, h_arr);
+    } 
+    char *TFFilename = argv[1];
+    char *dataFilename = argv[2];
+    unsigned int nTFs = atoi(argv[3]);
+    unsigned int nGenes = atoi(argv[4]);
+    unsigned int nSamples = atoi(argv[5]);
+    unsigned int nBootstraps = atoi(argv[6]);
 
-    //h_ret->print();
-    cout << "done ranking" << endl;
-    cout << "Time taken: " << (float)(stop - start)/CLOCKS_PER_SEC << endl;
-    delete(h_mat);
-    cudaFree(d_arr);
-    delete(h_ret);
-    */
-    Matrix<float> *mat;
-    clock_t start = clock();
-    loadMatrix(&mat, "data/brca-expmat-mini.csv",20531,256);
-    clock_t stop = clock();
-    mat->print();
-    delete(mat);
-    cout << "Time taken: " << (float)(stop - start)/CLOCKS_PER_SEC << endl;
+    // import transcription factor list
+    Matrix<std::string> *TFList;
+    loadMatrix(NULL, &TFList, TFFilename, nTFs, 1);
+    
+    // import data
+    Matrix<float> *dataMat;
+    Matrix<std::string> *geneLabels;
+    loadMatrix(&dataMat, &geneLabels, dataFilename, nGenes, nSamples);
+    
+    // rank data
+    float *d_rankMat = dataMat->getRankMatrix();
+#ifdef TEST
+    geneLabels->print();
+    TFList->print();
+    dataMat->print();
+#endif    
+    delete dataMat;
+    // calculate MIcutoff
+    // at this pint d_rankMat is a nGenes * nSamples matrix with rank
+    // this array is already in the GPU
+
+
+    // build network
+    
+    // dpi to prune network
+    
+    // output data
+
+    // cleanup
+    delete TFList;
+    delete geneLabels;
+    cudaFree(d_rankMat);
     return 0;
 }

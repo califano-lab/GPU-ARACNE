@@ -46,7 +46,7 @@ private:
    
 public:
     // constructor square matrix
-    __CUDA__ Matrix(unsigned int size)
+    __host__ Matrix(unsigned int size)
     {
         nRows = size;
         nCols = size;
@@ -59,7 +59,7 @@ public:
     }
 
     // special constructor called in kernel function
-    __CUDA__ Matrix(unsigned int m, unsigned int n, T *data)
+    __host__ Matrix(unsigned int m, unsigned int n, T *data)
     {
         nRows = m; 
         nCols = n;
@@ -69,7 +69,7 @@ public:
     }
 
     // constructor general 2-D matrix
-    __CUDA__ Matrix(unsigned int m, unsigned int n)
+    __host__ Matrix(unsigned int m, unsigned int n)
     {
         nRows = m;
         nCols = n;
@@ -82,7 +82,7 @@ public:
     }
 
     // copy constructor
-    __CUDA__ Matrix(const Matrix& rhs)
+    __host__ Matrix(const Matrix& rhs)
     {
         nRows = rhs.nRows;
         nCols = rhs.nCols;
@@ -95,7 +95,7 @@ public:
     }
     
     // overloading assignment operator
-    __CUDA__ Matrix& operator = (const Matrix<T>& rhs)
+    __host__ Matrix& operator = (const Matrix<T>& rhs)
     {
         if (this->data == rhs.data) return *this;
         delete[] data;
@@ -111,18 +111,18 @@ public:
     }
 
     // destructor
-    __CUDA__ ~Matrix()
+    __host__ ~Matrix()
     {
         delete[] data;
     }
 
     // check interaction
-    __CUDA__ bool hasCorrelation(unsigned int geneIdx1, unsigned int geneIdx2)
+    __host__ bool hasCorrelation(unsigned int geneIdx1, unsigned int geneIdx2)
     {
         return !(data[geneIdx1 * nCols + geneIdx2] < 0);
     }
 
-    __CUDA__ void setValue(unsigned int geneIdx1, unsigned int geneIdx2, T val)
+    __host__ void setValue(unsigned int geneIdx1, unsigned int geneIdx2, T val)
     {
         data[geneIdx1 * nCols + geneIdx2] = val;
     }
@@ -155,27 +155,27 @@ public:
         return d_data;
     }
     
-    __CUDA__ T& element(unsigned int geneIdx1, unsigned int geneIdx2)
+    __host__ T& element(unsigned int geneIdx1, unsigned int geneIdx2)
     {
         return data[geneIdx1 * nCols + geneIdx2];
     }
 
-    const __CUDA__ T* memAddr()
+    const __host__ T* memAddr()
     {
         return data;
     }
 
-    __CUDA__ size_t size()
+    __host__ size_t size()
     {
         return (size_t)(sizeof(T) * nRows * nCols);
     }
 
-    __CUDA__ unsigned int getNumRows()
+    __host__ unsigned int getNumRows()
     {
         return nRows;
     }
 
-    __CUDA__ unsigned int getNumCols()
+    __host__ unsigned int getNumCols()
     {
         return nCols;
     }
