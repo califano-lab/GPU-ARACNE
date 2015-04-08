@@ -7,7 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
-#include <map>
+#include <tr1/unordered_map>
 #include "util.hpp"
 using namespace std;
 
@@ -51,7 +51,7 @@ void createMapping(unsigned int **d_TFGeneIdx, Matrix<string> *TFList,
         Matrix<string> *geneLabels, unsigned int nTFs, unsigned int nGenes)
 {
     unsigned int *h_TFGeneIdx = new unsigned int[nTFs];
-    map<string, unsigned int> genePool;
+    tr1::unordered_map<string, unsigned int> genePool;
     for (unsigned int i = 0; i < nGenes; i++){
         genePool[geneLabels->element(i, 0)] = i;
     }
