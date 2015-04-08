@@ -51,10 +51,10 @@ int main(int argc, char *argv[])
 
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array
-    float *rawGraph = NULL; 
+    float *d_rawGraph = NULL; 
     
     // DPI to prune network
-    pruneGraph(rawGraph, nTFs, nGenes, d_TFGeneIdx);
+    pruneGraph(d_rawGraph, nTFs, nGenes, d_TFGeneIdx);
     
     // output data
 
