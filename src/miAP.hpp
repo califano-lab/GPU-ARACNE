@@ -1,41 +1,48 @@
-//
-//  miAP.h
-//  aracneGPU
-//
-//  Created by jing on 3/24/15.
-//  Copyright (c) 2015 jing. All rights reserved.
-//
+#ifndef miAP_HPP
+#define miAP_HPP
+#include "Cube.hpp"
+#include "util.hpp"
+#include <cstdio>
+#include <cstdlib>
 
-#ifndef __aracneGPU__miAP__
-#define __aracneGPU__miAP__
-
-#include <stdio.h>
-
-class GenePair
+template <typename T>
+__global__ 
+void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
+        unsigned int *d_TFGenesIdx, T **d_rawGraph)
 {
-  double x;
-  double y;
-  int xi;
-  int yi;
-  int maId;
-public :
-   inline double Get_X() const { return x; }
-   inline double Get_Y() const { return y; }
-   inline int    Get_XI() const { return xi; } 
-   inline int    Get_YI() const { return yi; } 
-   inline int  Get_MaID() const { return maId; } 
-   inline void Set_X( double X ) { x = X; } 
-   inline void Set_Y( double Y ) { y = Y; } 
-   inline void Set_XI( int XI ) { xi = XI; } 
-   inline void Set_YI( int YI ) { yi = YI; } 
-   inline void Set_MaID( int MaID ) { maId = MaID; }
-
-};
+    unsigned int TFIdx = blockIdx.x;
+    unsigned int geneIdx = blockIdx.y;
+    // need pick two rows of the d_rankMatrix
+    // first row: d_TFGenesIdx[TFIdx]
+    // second row: geneIdx
+    __shared__ Cube *cubeArray = new Cube[nSamples / 4 + 1];
+    unsigned int head = 0;
+    unsigned int tail = 0;
+    Cube cube;
+    cube.totalCount = nSamples;
+    cube.upper = ......................
+    dim3 blockDim(256, 1, 1);
+    dim3 gridDim(ceil(nSamples / 256.0), 1, 1);
+    // launch another kernel here
 
 
-class MutualInfo 
+}
+
+
+
+
+
+template <typename T>
+void miAP(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
+        unsigned int *d_TFGeneIdx, T **d_rawGraph)
 {
-  
-};
+    dim3 gridDim(nTFs, nGenes, 1);
+    dim3 blockDim(1, 1, 1);
 
-#endif /* defined(__aracneGPU__miAP__) */
+    HANDLE_ERROR( cudaMalloc((void **)d_rawGraph, sizeof(T) * nTFs * nGenes) );
+    computeMi<<<blockDim, gridDim>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, d_mi);
+    HANDLE_ERROR( cudaGetLastError() );
+    HANDLE_ERROR( cudaDeviceSynchronize() );
+}
+    
+#endif 
