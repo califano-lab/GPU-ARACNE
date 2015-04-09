@@ -9,8 +9,65 @@
 #include <time.h> 
 #include <math.h> 
 #include <conio.h>
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
 
-//__device__ __host__ 
+void genMIcutoff( float *dMat, float pValue, float *miCutoff ) 
+{
+  // host function to control miCutoff calculation 
+
+  // 1. git sample size and ngene
+  const int Ngene = dMat.nrow();
+  const int Nsmp = dMat.ncol();
+  const int NsubSmp = 15;
+
+  // 2. init sample proption
+  int subSmp[ NsubSmp ]; 
+  for ( int i = 1; i < Nsubsmp; ++i )
+  {
+    subSmp[i] = (int) (0.3 + (i - 1) * 0.05) * Nsmp  ; 
+  }
+
+  const int numRep = 3;
+  Nperm = 100000; 
+  
+  // init array to hold result  on host
+  float *alpha_h; 
+  *alpha_h = (float *) malloc( sizeof(float) * NsubSmp * numRep ) ; 
+
+  float *beta_h;
+  *beta_h = (float *) malloc( sizeof(float) * NsubSmp * numRep ) ; 
+
+  // copy data, alpha_h, beta_h to device 
+
+  // add some random nosie to data  kernel, leave data on kernel 
+
+  // for each sub sample and each replicate calculate threshold and coefficient 
+  extraplotaMICutoff_d <<< >>> ( *dMat, Nperm )  
+  
+  // copy data back 
+ 
+  // linear fitting 
+    float coef[2]; 
+
+    coef = subSmp ~ mean(beta_h) ; 
+    float a = mean( alpha_h) ; // overall alpha 
+    float b = coef[0]; 
+    float c = coef[1]; 
+
+  // calcuate MIcutoff  
+    miCutoff = ( log( pValue )  - a ) / ( b* n + c ) ;
+
+    return; 
+
+}
+
+__global__ 
+void extrapolateMICutoff_d( float *dMat, const int Nperm ) 
+{
+
+}
+
 int* genRandIntArray ( int array[], const int N )
 {
  // init random seed 
@@ -114,10 +171,11 @@ float calNullMI (const int Nsmp, const int Nperm) {
     return 0.0;
 }
 
-#include <thrust/sort.h>
-#include <thrust/execution_policy.h>
+void extrapolateMICutoff( float *matrix, const int Nsmp, float *coef )
+{
+}
 __global__
-void calCutoff ( float *nullMIArray , float *coef, const int Nperm ) 
+void calCutoff ( float *nullMIArray , float *coef, const int Nperm, float pPvalue ) 
 {
   // run use one block 
   // sort 
@@ -162,4 +220,5 @@ void calCutoff ( float *nullMIArray , float *coef, const int Nperm )
   
 }
 
+void calCoeff ( 
 
