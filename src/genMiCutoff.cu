@@ -2,17 +2,13 @@
 //  genMiCutoff.cpp
 //  aracneGPU
 //
-//  Created by jing on 3/24/15.
-//  Copyright (c) 2015 jing. All rights reserved.
-//
 
 #include <iostream>
 #include <stdlib.h> 
 #include <stdio.h>
 #include <time.h> 
 #include <math.h> 
-
-#include "genMiCutoff.hpp"
+#include <conio.h>
 
 //__device__ __host__ 
 int* genRandIntArray ( int array[], const int N )
@@ -63,7 +59,10 @@ float calMIap_d (int *X, int *Y, const int N){
    
 }
 
-float calMIcutCoeff (const int Nsmp, const int Nperm) {
+
+float calNullMI (const int Nsmp, const int Nperm) {
+    // use miAP kernel to calculate null model mi 
+    // return a float array of Nperm  
     // generate  permutation arrays
     int *h_X;
     h_X = (int * ) malloc( sizeof (int) * Nsmp);
@@ -115,47 +114,52 @@ float calMIcutCoeff (const int Nsmp, const int Nperm) {
     return 0.0;
 }
 
-float calMIap_h ( int X, int Y, int idX, int idY, const int & Nsmp, const int & Ngene ) 
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+__global__
+void calCutoff ( float *nullMIArray , float *coef, const int Nperm ) 
 {
-  // init
-  int Ndim = 2;
-  int Ndevide = (int) power( (double) 2,  Ndim ) ;   
-  int Nmargin = 2 * Ndim ;  
+  // run use one block 
+  // sort 
+  const int N = Nperm;  
+  thrust::stable_sort_by_key(thrust::seq , nullMIArray , nullMIArray + Nperm);
   
 
-  int poc[];
-  poc[0] = 1;
-  int kon[]; 
-  kon[0] = (int) Nsmp;
-  int poradi[ Nsmp ];  // the index for the samples  
-  int NN[ Ndevide ]; // # of data point for each subQuart 
-  int Imm[ Ndevide ]; // identity of each subQuart  
-  int marginal[ 4 * Ndevide ] [ Nmargin ] ; 
-  int Npar = 1; 
-  int Nex = (int) Nsmp; 
-  int NN = [] * Ndevide; 
+  // generate density
+  const int Npoint = Nperm / 100 ; 
+  int tdx = threadIdx.x + blockIdx.x * blockDim.x;
  
-  float mi = 0;
-  int IDrun = 0 ; 
-  float chi2 = { 0.0, 7.81, 13.9, 25.0, 42.0 };
-  for (int i = 1; i <= Nsmp; ++i )
-  {
-    poradi[ i - 1 ] = i ;
+  // init cumulative  
+  float cumf1[Npoint] ;   
+  float cumf2[Npoint] ;   
+  bool cumf2Bool[Npoint] ;   
+  if (tdx < Npoint )  {
+      cumf1[ tdx + i ] = 0.0 ; 
+      cumf2[ tdx + i ] = 0.0 ; 
+      cumf2Bool[ tdx + i ] = true ; 
+    }
   }
+  __syncthreads();
 
-  marginal[0][0] = 1; marginal[0][1] = 1; 
-  marginal[0][2] = Nsmp; marginal[0][3] = Nsmp; 
-
-  while ( Npar > 0 )   
-  {
-     IDrun = run + 1;   
-     apoc = poc[ Npar - 1];
-     akon = kon[ Npar - 1];
-     apor = poradi[ (apoc-1): (akon - 1 )]; // get the subset of the array 
-     Nex  = apor.size();
+  // take Npoint  
+  int cumf2BoolSum = 0; 
+  if( tdx < Npoint ) {
+    cumf1[ tdx ] = nullMIArray[ tdx * 100  ];
+    float temp = (Nperm - tdx * 100) /(1.0 * Nperm); 
+    cumf2[ tdx ] = temp ;
+    bool tempB = (temp == 0 ); 
+    cumf2Bool[ tdx ] =  tempB ;  
+    cumf2BoolSum += (int) tempB ;   
   }
+  __syncthreads();
 
-  mi = mi / (float) Nsmp ; 
-  return mi; 
+  const int Nfit = 100;
+  if( tdx < Npoint ) {
+    cumf1[ tdx ]  = nullMIArray[ tdx * 100 ]; 
+    cumf2[ tdx ]  = nullMIArray[ tdx * 100 ];  
+         
+  }
+  
 }
+
 
