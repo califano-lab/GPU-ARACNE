@@ -116,27 +116,28 @@ public:
         return !(data[geneIdx1 * nCols + geneIdx2] < 0);
     }
 
-    __host__ T* getCols( int *colsIdx, unsigned int numCols ) 
+    __host__ Matrix<T>* getCols( int *colsIdx, unsigned int numCols ) 
     {
 	// if ( numCols == 0 ) return; 
-        subMatrix = new T[ nRows * numCols ];
         nRows = this->nRows;
 	nCols = this->nCols;
+        Matrix<T> *subMatrix = new Matrix<T>(nRows,  numCols);
         for (int i = 0; i < nRows; i++){
             for (int j = 0; i < numCols; ++j ){
-                subMatrix[ i * numCols + j ] = this.data[ i * nCols + colsIdx[j] ];
+                subMatrix->setValue(i, j, this->element( i, colsIdx[j]));
             }
         }
         return subMatrix;
     } 
     
-    __host__ T* genRandPermMatrix( ) 
+    __host__ Matrix<T>* genRandPermMatrix( ) 
     {
       // generate a nRows * numCols randomized permuated matrix 
         nRows = this->nRows;
         nCols = this->nCols;
-	randPermMatrix = new T[ nRows * nCols ]; 
-     // TODO::: to be continued 
+	Matrix<T> *randPermMatrix = new Matrix<T>( nRows, nCols ); 
+	
+	
         for ( int i = 0; i < nRows; ++i )
         {
 	  for ( int j = 0; j < nCols ; ++j ) 
