@@ -2,6 +2,12 @@
 #define MATRIX_HPP
 #include "util.hpp"
 #include <cstdlib>
+
+#include <algorithm>    // std::random_shuffle
+#include <vector>       // std::vector
+#include <ctime>        // std::time
+#include <cstdlib>      // std::rand, std::srand
+
 #include <cuda.h>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
@@ -129,31 +135,31 @@ public:
         }
         return subMatrix;
     } 
-    
-    __host__ Matrix<T>* genRandPermMatrix( ) 
+   
+    __host__ Matrix<T> *genRandPermMatrix( ) 
     {
-      // generate a nRows * numCols randomized permuated matrix 
+        // generate a nRows * nCols randomized permuated matrix 
+	// use the built-in random_shuffle
         nRows = this->nRows;
         nCols = this->nCols;
 	Matrix<T> *randPermMatrix = new Matrix<T>( nRows, nCols ); 
-	
-	
-        for ( int i = 0; i < nRows; ++i )
-        {
-	  for ( int j = 0; j < nCols ; ++j ) 
-	  {
-	    randPermMatrix[ i * numCols + j ] = i + 1;
-	  }
+
+	std::vector<int> myVect; 
+	for ( int i = 1; i < (nRows + 1); ++i ) 
+	{
+	  myVect[i-1] = i;
+	}
+
+	for ( int j = 0; j < nCols ; ++j ) 
+	{
+	    std::random_shuffle( myVect.begin(), myVect.end() );
+	    for(int i = 0; i < nRows; ++i ) 
+	    {
+	      randPermMatrix->setValue( i, j, myVect[i] );
+	    }
         }
      
-        for ( int i = N - 1; i > 0; --i)
-        {
-          size_t j = (unsigned int ) ( drand48() * (i+ 1));
-          int t = a[j] ; 
-          a[j] = a[i]; 
-          a[i] = t; 
-        }
-      
+	return randPermMatrix; 
 
     }
 
