@@ -122,15 +122,13 @@ public:
         return !(data[geneIdx1 * nCols + geneIdx2] < 0);
     }
 
-    __host__ Matrix<T>* getCols( int *colsIdx, unsigned int numCols ) 
+    __host__ Matrix<T> *getCols( int *colsIdx, unsigned int numCols ) 
     {
 	// if ( numCols == 0 ) return; 
-        nRows = this->nRows;
-	nCols = this->nCols;
         Matrix<T> *subMatrix = new Matrix<T>(nRows,  numCols);
         for (int i = 0; i < nRows; i++){
             for (int j = 0; i < numCols; ++j ){
-                subMatrix->setValue(i, j, this->element( i, colsIdx[j]));
+                subMatrix->setValue( i, j, data[ i * nCols + colsIdx[j] ] );
             }
         }
         return subMatrix;
@@ -140,8 +138,6 @@ public:
     {
         // generate a nRows * nCols randomized permuated matrix 
 	// use the built-in random_shuffle
-        nRows = this->nRows;
-        nCols = this->nCols;
 	Matrix<T> *randPermMatrix = new Matrix<T>( nRows, nCols ); 
 
 	std::vector<int> myVect; 
