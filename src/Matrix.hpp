@@ -21,6 +21,7 @@ __global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols)
     for (int i = 0; i < nCols; i++){
         helperArray[i] = i;
     }
+
     thrust::stable_sort_by_key(thrust::seq, d_data+tabIdx*nCols, d_data+tabIdx*nCols + nCols, helperArray);
     for (int i = 0; i < nCols; i++){
         d_data[tabIdx * nCols + helperArray[i]] = (T)i;
@@ -115,6 +116,46 @@ public:
         return !(data[geneIdx1 * nCols + geneIdx2] < 0);
     }
 
+    __host__ T* getCols( int *colsIdx, unsigned int numCols ) 
+    {
+	// if ( numCols == 0 ) return; 
+        subMatrix = new T[ nRows * numCols ];
+        nRows = this->nRows;
+	nCols = this->nCols;
+        for (int i = 0; i < nRows; i++){
+            for (int j = 0; i < numCols; ++j ){
+                subMatrix[ i * numCols + j ] = this.data[ i * nCols + colsIdx[j] ];
+            }
+        }
+        return subMatrix;
+    } 
+    
+    __host__ T* genRandPermMatrix( ) 
+    {
+      // generate a nRows * numCols randomized permuated matrix 
+        nRows = this->nRows;
+        nCols = this->nCols;
+	randPermMatrix = new T[ nRows * nCols ]; 
+     // TODO::: to be continued 
+        for ( int i = 0; i < nRows; ++i )
+        {
+	  for ( int j = 0; j < nCols ; ++j ) 
+	  {
+	    randPermMatrix[ i * numCols + j ] = i + 1;
+	  }
+        }
+     
+        for ( int i = N - 1; i > 0; --i)
+        {
+          size_t j = (unsigned int ) ( drand48() * (i+ 1));
+          int t = a[j] ; 
+          a[j] = a[i]; 
+          a[i] = t; 
+        }
+      
+
+    }
+
     __host__ void setValue(unsigned int geneIdx1, unsigned int geneIdx2, T val)
     {
         data[geneIdx1 * nCols + geneIdx2] = val;
@@ -172,7 +213,7 @@ public:
     {
         return nCols;
     }
-
+    
     __host__ void print()
     {
         for (int i = 0; i < nRows; i++){
