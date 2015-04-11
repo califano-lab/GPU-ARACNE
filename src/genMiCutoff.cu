@@ -65,8 +65,10 @@ float genMIcutoff( float *dMat, float pValue )
 
   // HANDLE_ERROR( cudaMalloc( (void **) &alpha_d, sizeof(float) * nSubsmp * nRep) );
 
-  for ( int iSubsmp = 0; iSubsmp < nSubsmp ; ++iSubsmp ) {
-     for ( int iRep  = 0; iRep < nRep ; ++iRep ) {
+  for ( int iSubsmp = 0; iSubsmp < nSubsmp ; ++iSubsmp ) 
+  {
+     for ( int iRep  = 0; iRep < nRep ; ++iRep ) 
+     {
         // take a subset of dMat
         // overload the dmat_sub_d pointer every time launch a size >= previous_size
 	 genRandIntArray_h( tempRandIdxArray, nSample, nSubsmp );
@@ -74,18 +76,18 @@ float genMIcutoff( float *dMat, float pValue )
 
         // and generate a similiar size of array with random permuated integer 
          rMatSub_h = dMatSub_h.genRandPermMatrix(); 
-	 HANDLE_ERROR( cudaMemcpy( (void *) dMatSub_d, (void *) dMatSub_h->memAddr(), dMatSub_h->size(), cudaMemcpyHostToDevice)  ) ; 
+	 // HANDLE_ERROR( cudaMemcpy( (void *) dMatSub_d, (void *) dMatSub_h->memAddr(), dMatSub_h->size(), cudaMemcpyHostToDevice)  ) ; 
 	
-        // launch kernel 
-	 extraplotaMICutoff_d <<< gridSize, blockSize >>> (dMatSub_d, nPerm, coef_d );
+        // function to calculate icoef 
+	 extraplotaMICutoff_h (dMatSub, nPerm, coef );
 
 	 HANDLE_ERROR(cudaGetLastError());
     	 HANDLE_ERROR(cudaDeviceSynchronize());
 	 __cudasyncDevice(); 
 	// copy result back
-	 HANDLE_ERROR( cudaMemcpy( coef_h[ iSubsmp * nSubsmp + iRep ] , coef_d, sizeof(float) * 2, cudaMemcpyDeviceToHost) );
-	
-   }
+	 HANDLE_ERROR( cudaMemcpy( coef[ iSubsmp * nSubsmp + iRep ] , coef, sizeof(float) * 2, cudaMemcpyDeviceToHost) );
+
+     }
   }
 
   // linear fitting 
@@ -107,68 +109,70 @@ float genMIcutoff( float *dMat, float pValue )
 }
 
 // local function 
-// void extrapolateMICutoff_d( float *dMat, const int Nperm, float *nullMI ) 
-// {
-//   // input dMat is random permuted integers with nSubsmp <= nSample Columns 
-//   // and nGene rows;
-//   const int nGene = dMat.getNumRows() ;
-//   const int nSample = dMat.getNumColumns() ;
-//   // random take 2 index 
-// 
-//   int randomI; 
-//   int randomJ; 
-// 
-//   // prepare random datadata 
-//   X = dMat[ randomI ]; 
-//   Y = dMat[ randomJ ];
-// 
-// }
+void extrapolateMICutoff_h( float *dMat, const int Nperm, float *nullMI ) 
+{
+  // input dMat is random permuted integers with nSubsmp <= nSample Columns 
+  // and nGene rows;
+  // output: coeff_d, an array of 2 floats 
+  const int nGene = dMat.nRows() ;
+  const int nSample = dMat.nCols() ;
+  // random take 2 index 
 
-//__global__
-//void genCoef_subSmp ( float *nullMIArray , float *coef, const int Nperm, float pPvalue ) 
-//{
-//  // run use one block 
-//  // sort 
-//  const int N = Nperm;  
-//  thrust::stable_sort_by_key(thrust::seq , nullMIArray , nullMIArray + Nperm);
-//  
-//
-//  // generate density
-//  const int Npoint = Nperm / 100 ; 
-//  int tdx = threadIdx.x + blockIdx.x * blockDim.x;
-// 
-//  // init cumulative  
-//  float cumf1[Npoint] ;   
-//  float cumf2[Npoint] ;   
-//  bool cumf2Bool[Npoint] ;   
-//  if (tdx < Npoint )  {
-//      cumf1[ tdx + i ] = 0.0 ; 
-//      cumf2[ tdx + i ] = 0.0 ; 
-//      cumf2Bool[ tdx + i ] = true ; 
-//    }
-//  }
-//  __syncthreads();
-//
-//  // take Npoint  
-//  int cumf2BoolSum = 0; 
-//  if( tdx < Npoint ) {
-//    cumf1[ tdx ] = nullMIArray[ tdx * 100  ];
-//    float temp = (Nperm - tdx * 100) /(1.0 * Nperm); 
-//    cumf2[ tdx ] = temp ;
-//    bool tempB = (temp == 0 ); 
-//    cumf2Bool[ tdx ] =  tempB ;  
-//    cumf2BoolSum += (int) tempB ;   
-//  }
-//  __syncthreads();
-//
-//  const int Nfit = 100;
-//  if( tdx < Npoint ) {
-//    cumf1[ tdx ]  = nullMIArray[ tdx * 100 ]; 
-//    cumf2[ tdx ]  = nullMIArray[ tdx * 100 ];  
-//         
-//  }
-//  
-//}
-//
+  int randomI; 
+  int randomJ; 
+
+  // prepare random datadata 
+  X = dMat[ randomI ]; 
+  Y = dMat[ randomJ ];
+
+}
+
+__global__
+void fittingMI_d( float *nullMIArray, const int nPerm, float pPvalue, float *coef, ) 
+{
+  // after get all nPerm MIs in an array, 
+  // do fitting to get coef 
+  // sort 
+  const int N = nPerm;  
+  thrust::stable_sort_by_key(thrust::seq , nullMIArray , nullMIArray + nPerm);
+
+  // generate density
+  const int nPoint = nPerm / 100 ; 
+  int tdx = threadIdx.x + blockIdx.x * blockDim.x;
+ 
+  // init cumulative  
+  float cumf1[nPoint] ;   
+  float cumf2[nPoint] ;   
+  bool cumf2Bool[nPoint] ;   
+
+  if (tdx < nPoint )  
+  {
+      cumf1[ tdx + i ] = 0.0 ; 
+      cumf2[ tdx + i ] = 0.0 ; 
+      cumf2Bool[ tdx + i ] = true ; 
+  }
+  __syncthreads();
+
+  // take nPoint  
+  int cumf2BoolSum = 0; 
+  if( tdx < nPoint ) {
+    cumf1[ tdx ] = nullMIArray[ tdx * 100  ];
+    float temp = (Nperm - tdx * 100) /(1.0 * Nperm); 
+    cumf2[ tdx ] = temp ;
+    bool tempB = (temp == 0 ); 
+    cumf2Bool[ tdx ] =  tempB ;  
+    cumf2BoolSum += (int) tempB ;   
+  }
+  __syncthreads();
+
+  const int Nfit = 100;
+  if( tdx < nPoint ) {
+    cumf1[ tdx ]  = nullMIArray[ tdx * 100 ]; 
+    cumf2[ tdx ]  = nullMIArray[ tdx * 100 ];  
+         
+  }
+  
+}
+
 
 
