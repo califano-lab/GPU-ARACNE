@@ -1,6 +1,7 @@
 // basic viable unit of execution.
 #include "InputOutput.hpp"
 #include "Matrix.hpp"
+#include "genMiCutoff.hpp"
 #include <cstdlib>
 #include <cstdio>
 
@@ -32,11 +33,14 @@ int main(int argc, char *argv[])
     loadMatrix(&dataMat, &geneLabels, dataFilename, nGenes, nSamples);
     
     // rank data
-    float *d_rankMat = dataMat->getRankMatrix();
-    delete dataMat;
     
     // calculate MIcutoff
     std::srand( unsigned ( std::time(0) ) );	
+    const int nSample = 20;
+    const int nSubsmp = 10;
+    int *tempRandIdxArray; // local random subsampling index
+    tempRandIdxArray = ( int * ) malloc( sizeof(int) * nSample );
+    genRandIntArray_h( tempRandIdxArray, nSample, nSubsmp );
 
     // at this pint d_rankMat is a nGenes * nSamples matrix with rank
     // this array is already in the GPU
