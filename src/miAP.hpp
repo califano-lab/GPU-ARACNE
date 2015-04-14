@@ -15,7 +15,7 @@ __device__ bool chiSeq(unsigned int nSamples, unsigned int a,
     float expected = (a + b + c + d) / 4.0;
     float testStat = ((a - expeted) * (a - expected) + (b - expected) * (b - expected) + 
         (c - expected) * (c - expected) + (d - expected) * (d - expcted)) / expected;
-    if (testStat > CHI_THRESHOLD) return false; // not significant
+    if (testStat < CHI_THRESHOLD) return false; // not significant
     else return true;
 }
 
