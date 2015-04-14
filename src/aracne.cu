@@ -5,13 +5,13 @@
 #include <cstdio>
 
 // argument list: 
-// <datafile> <nGenes> <nSamples> <nBootstraps>
+// < datafile > < nGenes > < nSamples > < nBootstraps > < pValueThreshold > 
 int main(int argc, char *argv[])
 {
     // argument check
-    if (argc != 7) {
+    if (argc != 8) {
         std::cerr << "Usage: " << argv[0] 
-            << " <TFfile> <datafile> <nTFs> <nGenes> <nSamples> <nBootstraps>" << std::endl;  
+            << " <TFfile> <datafile> <nTFs> <nGenes> <nSamples> <nBootstraps> <pvalue>" << std::endl;  
         exit(1);
     } 
     char *TFFilename = argv[1];
@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
     unsigned int nGenes = atoi(argv[4]);
     unsigned int nSamples = atoi(argv[5]);
     unsigned int nBootstraps = atoi(argv[6]);
+    long pvalue = atol( argv[7] ); 
 
     // import transcription factor list
     Matrix<std::string> *TFList;
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
     delete dataMat;
     
     // calculate MIcutoff
+
     // at this pint d_rankMat is a nGenes * nSamples matrix with rank
     // this array is already in the GPU
 

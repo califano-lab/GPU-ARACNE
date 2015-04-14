@@ -2,6 +2,12 @@
 #define MATRIX_HPP
 #include "util.hpp"
 #include <cstdlib>
+
+#include <algorithm>    // std::random_shuffle
+#include <vector>       // std::vector
+#include <ctime>        // std::time
+#include <cstdlib>      // std::rand, std::srand
+
 #include <cuda.h>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
@@ -21,6 +27,7 @@ __global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols)
     for (int i = 0; i < nCols; i++){
         helperArray[i] = i;
     }
+
     thrust::stable_sort_by_key(thrust::seq, d_data+tabIdx*nCols, d_data+tabIdx*nCols + nCols, helperArray);
     for (int i = 0; i < nCols; i++){
         d_data[tabIdx * nCols + helperArray[i]] = (T)i;
@@ -115,6 +122,43 @@ public:
         return !(data[geneIdx1 * nCols + geneIdx2] < 0);
     }
 
+    __host__ Matrix<T> *getCols( int *colsIdx, unsigned int numCols ) 
+    {
+	// if ( numCols == 0 ) return; 
+        Matrix<T> *subMatrix = new Matrix<T>(nRows,  numCols);
+        for (int i = 0; i < nRows; i++){
+            for (int j = 0; i < numCols; ++j ){
+                subMatrix->setValue( i, j, data[ i * nCols + colsIdx[j] ] );
+            }
+        }
+        return subMatrix;
+    } 
+   
+    __host__ Matrix<T> *genRandPermMatrix( ) 
+    {
+        // generate a nRows * nCols randomized permuated matrix 
+	// use the built-in random_shuffle
+	Matrix<T> *randPermMatrix = new Matrix<T>( nRows, nCols ); 
+
+	std::vector<int> myVect; 
+	for ( int i = 1; i < (nRows + 1); ++i ) 
+	{
+	  myVect[i-1] = i;
+	}
+
+	for ( int j = 0; j < nCols ; ++j ) 
+	{
+	    std::random_shuffle( myVect.begin(), myVect.end() );
+	    for(int i = 0; i < nRows; ++i ) 
+	    {
+	      randPermMatrix->setValue( i, j, myVect[i] );
+	    }
+        }
+     
+	return randPermMatrix; 
+
+    }
+
     __host__ void setValue(unsigned int geneIdx1, unsigned int geneIdx2, T val)
     {
         data[geneIdx1 * nCols + geneIdx2] = val;
@@ -172,7 +216,7 @@ public:
     {
         return nCols;
     }
-
+    
     __host__ void print()
     {
         for (int i = 0; i < nRows; i++){
