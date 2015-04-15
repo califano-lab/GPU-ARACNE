@@ -31,7 +31,7 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
     // need pick two rows of the d_rankMatrix
     // first row (define it X): d_TFGenesIdx[TFIdx]
     // second row (define it Y): geneIdx
-    __shared__ Cube cubeArray[nSamples / 4 + 1];
+    extern __shared__ Cube cubeArray[];
     unsigned int head = 0;
     unsigned int tail = 1;
     Cube cube;
@@ -41,10 +41,10 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
     cube.left = 0;
     cube.right = nSamples - 1;
     cubeArray[head] = cube;
-    __shared__ unsigned int upperRight = 0;
-    __shared__ unsigned int upperLeft = 0;
-    __shared__ unsigned int lowerLeft = 0 ; 
-    __shared__ unsigned int lowerRight = 0;
+    __shared__ unsigned int upperRight;
+    __shared__ unsigned int upperLeft;
+    __shared__ unsigned int lowerLeft; 
+    __shared__ unsigned int lowerRight;
     float miValue = 0;
     do{
         unsigned int colIdx = threadIdx.x;
@@ -125,7 +125,7 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
     // first row (define it X): rowIdx
     // second row (define it Y): rowIdx * 2 
     // see lines 146 147
-    __shared__ Cube cubeArray[nSamples / 4 + 1];
+    extern __shared__ Cube cubeArray[];
     unsigned int head = 0;
     unsigned int tail = 1;
     Cube cube;
@@ -135,10 +135,10 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
     cube.left = 0;
     cube.right = nSamples - 1;
     cubeArray[head] = cube;
-    __shared__ unsigned int upperRight = 0;
-    __shared__ unsigned int upperLeft = 0;
-    __shared__ unsigned int lowerLeft = 0 ; 
-    __shared__ unsigned int lowerRight = 0;
+    __shared__ unsigned int upperRight;
+    __shared__ unsigned int upperLeft;
+    __shared__ unsigned int lowerLeft; 
+    __shared__ unsigned int lowerRight;
     float miValue = 0;
     do{
         unsigned int colIdx = threadIdx.x;
@@ -192,8 +192,8 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
             head = head + 1;            
         } else {
             // compute the actual mutual information value here
-            unsigned int countX = cubeArray[head].right - cubeArray[left] + 1;
-            unsigned int countY = cubeArray[head].upper - cubeArray[lower] + 1;
+            unsigned int countX = cubeArray[head].right - cubeArray[head].left + 1;
+            unsigned int countY = cubeArray[head].upper - cubeArray[head].lower + 1;
             float logRight;
             if (cubeArray[head].totalCount == 0)
                 logRight = 1;
@@ -220,7 +220,7 @@ void miAP(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int 
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_rawGraph, sizeof(T) * nTFs * nGenes) );
-    computeMi<<<blockDim, gridDim, 1024>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph);
+    computeMi<<<blockDim, gridDim, nSamples / 4 + 1>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
@@ -237,7 +237,7 @@ void miAP(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int nSampl
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_miResult, sizeof(T) * nPairs) );
-    computeMi<<<blockDim, gridDim, 1024>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
+    computeMi<<<blockDim, gridDim, nSamples / 4 + 1>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
