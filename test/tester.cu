@@ -3,6 +3,7 @@
 #include "InputOutput.hpp"
 #include "Matrix.hpp"
 #include "pruneGraph.hpp"
+#include "miAP.hpp"
 #include <cstdlib>
 #include <cstdio>
 
@@ -48,7 +49,8 @@ int main(int argc, char *argv[])
     // at this pint d_rankMat is a nGenes * nSamples matrix with rank
     // this array is already in the GPU
 
-
+    float *d_miValue;
+    miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue);
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array
     float *d_rawGraph = NULL; 

@@ -2,19 +2,20 @@
 #define miAP_HPP
 #include "Cube.hpp"
 #include "util.hpp"
+#include <cuda.h>
 #include <cstdio>
 #include <cstdlib>
 #define CHI_THRESHOLD 7.815 // 95%
 
 // Chi Square statistical test
-__device__ bool chiSeq(unsigned int nSamples, unsigned int a, 
-        unsigned int b, unsigned int c, unsigned int d){
+__device__ 
+bool chiSeq(unsigned int nSamples, unsigned int a, unsigned int b, unsigned int c, unsigned int d){
     if (a + b + c + d == nSamples) return true; // first cube
     if (a + b + c + d <= 4) return false;
     
     float expected = (a + b + c + d) / 4.0;
-    float testStat = ((a - expeted) * (a - expected) + (b - expected) * (b - expected) + 
-        (c - expected) * (c - expected) + (d - expected) * (d - expcted)) / expected;
+    float testStat = ((a - expected) * (a - expected) + (b - expected) * (b - expected) + 
+        (c - expected) * (c - expected) + (d - expected) * (d - expected)) / expected;
     if (testStat < CHI_THRESHOLD) return false; // not significant
     else return true;
 }
@@ -97,8 +98,8 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
             head = head + 1;            
         } else {
             // compute the actual mutual information value here
-            unsigned int countX = cubeArray[head].right - cubeArray[left] + 1;
-            unsigned int countY = cubeArray[head].upper - cubeArray[lower] + 1;
+            unsigned int countX = cubeArray[head].right - cubeArray[head].left + 1;
+            unsigned int countY = cubeArray[head].upper - cubeArray[head].lower + 1;
             float logRight;
             if (cubeArray[head].totalCount == 0)
                 logRight = 1;
@@ -219,7 +220,7 @@ void miAP(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int 
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_rawGraph, sizeof(T) * nTFs * nGenes) );
-    computeMi<<<blockDim, gridDim>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph);
+    computeMi<<<blockDim, gridDim, 1024>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
@@ -236,7 +237,7 @@ void miAP(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int nSampl
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_miResult, sizeof(T) * nPairs) );
-    computeMi<<<blockDim, gridDim>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
+    computeMi<<<blockDim, gridDim, 1024>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }

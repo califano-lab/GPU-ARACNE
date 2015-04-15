@@ -9,6 +9,6 @@ public:
     unsigned int lower;
     unsigned int left;
     unsigned int right;
-}
+};
 
 #endif
