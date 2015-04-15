@@ -46,13 +46,17 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
     __shared__ unsigned int lowerLeft; 
     __shared__ unsigned int lowerRight;
     float miValue = 0;
+    __syncthreads();
     do{
+        upperRight = 0;
+        upperLeft = 0;
+        lowerLeft = 0;
+        lowerRight = 0;
         unsigned int colIdx = threadIdx.x;
         unsigned int middleX = (cubeArray[head].left + cubeArray[head].right) / 2;
         unsigned int middleY = (cubeArray[head].upper + cubeArray[head].lower) / 2;
         unsigned int coordX = round(d_rankMatrix[d_TFGenesIdx[TFIdx] * nSamples + colIdx]);
         unsigned int coordY = round(d_rankMatrix[geneIdx * nSamples + colIdx]);
-        
         if (cubeArray[head].left <= coordX && coordX < middleX){
             if (cubeArray[head].lower <= coordY && coordY < middleY){
                 atomicAdd(&lowerLeft, 1);
@@ -67,7 +71,7 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
             }
         }
         __syncthreads();
-
+        
         if (chiSeq(nSamples, upperRight, upperLeft, lowerLeft, lowerRight)) {// significant
             cubeArray[tail].totalCount = upperRight;
             cubeArray[tail].upper = cubeArray[head].upper;
@@ -104,14 +108,16 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
             if (cubeArray[head].totalCount == 0)
                 logRight = 1;
             else
-                logRight = (float)cubeArray[head].totalCount / (float)(countX * countY);
+                logRight = (float)cubeArray[head].totalCount*nSamples / (float)(countX * countY);
             // miValue and head on register
             // no locking needed
-            miValue += (float)cubeArray[head].totalCount *  log(logRight);
+            miValue += (float)cubeArray[head].totalCount/nSamples *  log(logRight);
             head = head + 1;
         }
         __syncthreads();
     } while(head < tail);
+    if (threadIdx.x == 0)
+        printf("MI = %f\n", miValue);
     d_rawGraph[TFIdx * nGenes + geneIdx] = miValue;
 }
 
@@ -140,7 +146,12 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
     __shared__ unsigned int lowerLeft; 
     __shared__ unsigned int lowerRight;
     float miValue = 0;
+    __syncthreads();
     do{
+        upperRight = 0;
+        upperLeft = 0;
+        lowerLeft = 0;
+        lowerRight = 0;
         unsigned int colIdx = threadIdx.x;
         unsigned int middleX = (cubeArray[head].left + cubeArray[head].right) / 2;
         unsigned int middleY = (cubeArray[head].upper + cubeArray[head].lower) / 2;
@@ -198,10 +209,10 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
             if (cubeArray[head].totalCount == 0)
                 logRight = 1;
             else
-                logRight = (float)cubeArray[head].totalCount / (float)(countX * countY);
+                logRight = (float)cubeArray[head].totalCount * nSamples / (float)(countX * countY);
             // miValue and head on register
             // no locking needed
-            miValue += (float)cubeArray[head].totalCount *  log(logRight);
+            miValue += (float)cubeArray[head].totalCount/nSamples *  log(logRight);
             head = head + 1;
         }
         __syncthreads();
@@ -220,7 +231,7 @@ void miAP(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int 
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_rawGraph, sizeof(T) * nTFs * nGenes) );
-    computeMi<<<blockDim, gridDim, nSamples / 4 + 1>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph);
+    computeMi<<<gridDim, blockDim, nSamples>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
@@ -237,7 +248,7 @@ void miAP(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int nSampl
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_miResult, sizeof(T) * nPairs) );
-    computeMi<<<blockDim, gridDim, nSamples / 4 + 1>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
+    computeMi<<<gridDim, blockDim, nSamples>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
