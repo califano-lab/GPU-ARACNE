@@ -43,6 +43,10 @@ int main(int argc, char *argv[])
     geneLabels->print();
     TFList->print();
     dataMat->print();
+    Matrix<float> *h_ranked = new Matrix<float>(nGenes, nSamples);
+    cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
+    h_ranked->print();
+    delete h_ranked;
 #endif    
     delete dataMat;
     // calculate MIcutoff
@@ -51,12 +55,24 @@ int main(int argc, char *argv[])
 
     float *d_miValue;
     miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue);
+
+#ifdef TEST
+    Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
+    cudaMemcpy((void *)h_miValue->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
+    h_miValue->print();
+    delete h_miValue;
+#endif
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array
     
     // DPI to prune network
     pruneGraph(d_miValue, nTFs, nGenes, d_TFGeneIdx);
-    
+#ifdef TEST
+    Matrix<float> *h_miValue_pruned = new Matrix<float>(nTFs, nGenes);
+    cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
+    h_miValue_pruned->print();
+    delete h_miValue_pruned;
+#endif
     // output data
 
     // cleanup

@@ -57,6 +57,7 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
         unsigned int middleY = (cubeArray[head].upper + cubeArray[head].lower) / 2;
         unsigned int coordX = round(d_rankMatrix[d_TFGenesIdx[TFIdx] * nSamples + colIdx]);
         unsigned int coordY = round(d_rankMatrix[geneIdx * nSamples + colIdx]);
+/*
         if (cubeArray[head].left <= coordX && coordX < middleX){
             if (cubeArray[head].lower <= coordY && coordY < middleY){
                 atomicAdd(&lowerLeft, 1);
@@ -70,6 +71,16 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
                 atomicAdd(&upperRight, 1);
             }
         }
+*/
+        // optimize to reduce thread divergence
+        atomicAdd(&lowerLeft, cubeArray[head].left <= coordX & coordX < middleX & 
+                cubeArray[head].lower <= coordY & coordY < middleY);
+        atomicAdd(&upperLeft, cubeArray[head].left <= coordX & coordX < middleX & 
+                middleY <= coordY & coordY <= cubeArray[head].upper);
+        atomicAdd(&lowerRight, middleX <= coordX & coordX <= cubeArray[head].right &
+                cubeArray[head].lower <= coordY & coordY < middleY);
+        atomicAdd(&upperRight, middleX <= coordX & coordX <= cubeArray[head].right &
+                middleY <= coordY & coordY <= cubeArray[head].upper);
         __syncthreads();
         
         if (chiSeq(nSamples, upperRight, upperLeft, lowerLeft, lowerRight)) {// significant
@@ -117,7 +128,7 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
         __syncthreads();
     } while(head < tail);
     if (threadIdx.x == 0)
-        printf("MI = %f\n", miValue);
+        //printf("MI = %f\n", miValue);
     d_rawGraph[TFIdx * nGenes + geneIdx] = miValue;
 }
 
@@ -158,7 +169,7 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
         unsigned int coordX = d_randomMatrix[rowIdx * nSamples + colIdx];
         unsigned int coordY = d_randomMatrix[rowIdx * 2 * nSamples + colIdx];
         
-        if (cubeArray[head].left <= coordX && coordX < middleX){
+ /*       if (cubeArray[head].left <= coordX && coordX < middleX){
             if (cubeArray[head].lower <= coordY && coordY < middleY){
                 atomicAdd(&lowerLeft, 1);
             } else if (middleY <= coordY && coordY <= cubeArray[head].upper){
@@ -171,6 +182,16 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
                 atomicAdd(&upperRight, 1);
             }
         }
+*/
+        // optimize to reduce thread divergence
+        atomicAdd(&lowerLeft, cubeArray[head].left <= coordX & coordX < middleX & 
+                cubeArray[head].lower <= coordY & coordY < middleY);
+        atomicAdd(&upperLeft, cubeArray[head].left <= coordX & coordX < middleX & 
+                middleY <= coordY & coordY <= cubeArray[head].upper);
+        atomicAdd(&lowerRight, middleX <= coordX & coordX <= cubeArray[head].right &
+                cubeArray[head].lower <= coordY & coordY < middleY);
+        atomicAdd(&upperRight, middleX <= coordX & coordX <= cubeArray[head].right &
+                middleY <= coordY & coordY <= cubeArray[head].upper);
         __syncthreads();
 
         if (chiSeq(nSamples, upperRight, upperLeft, lowerLeft, lowerRight)) {// significant
