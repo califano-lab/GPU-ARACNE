@@ -4,9 +4,9 @@
 #include <cuda.h>
 #include "util.hpp"
 #include <thrust/sort.h>
-#include <thrust/execution_policy.h>
+#include <thrust/device_ptr.h>
 #include <cmath>
-#define PAIRS 100000
+#define PAIRS 20
 #define OUTLIERS 100
 #define FITTING 1000
 
@@ -28,23 +28,26 @@ float computeMiThreshold(unsigned int nSamples, float pValue, unsigned int seed)
     // load the random permuted matrix onto GPU
     unsigned int *d_randomMatrix;
     HANDLE_ERROR (cudaMalloc((void **)&d_randomMatrix, h_randomMatrix->size()));
-    HANDLE_ERROR (cudaMemcpy((void *)d_randomMatrix, h_randomMatrix->memAddr(), 
+    HANDLE_ERROR (cudaMemcpy((void *)d_randomMatrix, (void *)h_randomMatrix->memAddr(), 
                 h_randomMatrix->size(), cudaMemcpyHostToDevice));
     
+    std::cout<<"permute passed"<<std::endl;
     // declare the result variable and 
     // call miAP() to compute all the mutual information values in the d_miResult
     float *d_miResult;
     miAP(d_randomMatrix, PAIRS, nSamples, &d_miResult);
-    
+    std::cout<<"MI collected"<<std::endl;
     // on device sort of this 100000 element array
-    thrust::stable_sort(thrust::seq, d_miResult, d_miResult + PAIRS);
-
+    // first need to wrap the device pointers
+    thrust::device_ptr<float> w_miResult(d_miResult);
+    thrust::stable_sort(w_miResult, w_miResult + PAIRS);
+    std::cout<<"sorted"<<std::endl;
     // copy data back to host
     float *h_miResult = new float[PAIRS];
     HANDLE_ERROR (cudaMemcpy((void *)h_miResult, (void *)d_miResult, 
                 PAIRS * sizeof (float), cudaMemcpyDeviceToHost) );
     HANDLE_ERROR (cudaDeviceSynchronize());
-
+    std::cout<<"now on host"<<std::endl;
     // copy (PAIRS - OUTLIERS - FITTING) to (PAIRS - OUTLIERS)
     int firstPointToFit = PAIRS - OUTLIERS - FITTING;
     float *X_logPValues = new float[FITTING];

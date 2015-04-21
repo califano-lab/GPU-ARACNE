@@ -7,7 +7,6 @@
 #include "genMiCutoff.hpp"
 #include <cstdlib>
 #include <cstdio>
-#define PAIRS 100000
 
 // argument list: 
 // <TFfile> <datafile> <nTFs> <nGenes> <nSamples> <nBootstraps>
