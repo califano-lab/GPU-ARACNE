@@ -24,7 +24,7 @@ bool chiSeq(unsigned int nSamples, unsigned int a, unsigned int b, unsigned int 
 template <typename T>
 __global__ 
 void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
-        unsigned int *d_TFGenesIdx, T *d_rawGraph)
+        unsigned int *d_TFGenesIdx, T *d_rawGraph, T miThreshold)
 {
     unsigned int TFIdx = blockIdx.x;
     unsigned int geneIdx = blockIdx.y;
@@ -129,7 +129,7 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
     } while(head < tail);
     if (threadIdx.x == 0)
         //printf("MI = %f\n", miValue);
-    d_rawGraph[TFIdx * nGenes + geneIdx] = miValue;
+    d_rawGraph[TFIdx * nGenes + geneIdx] = miValue - miThreshold;
 }
 
 // called by null model miAP()
@@ -246,13 +246,13 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
 // function called during actual MI computation 
 template <typename T>
 void miAP(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
-        unsigned int *d_TFGeneIdx, T **d_rawGraph)
+        unsigned int *d_TFGeneIdx, T **d_rawGraph, T miThreshold)
 {
     dim3 gridDim(nTFs, nGenes, 1);
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_rawGraph, sizeof(T) * nTFs * nGenes) );
-    computeMi<<<gridDim, blockDim, nSamples>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph);
+    computeMi<<<gridDim, blockDim, nSamples>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph, miThreshold);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }

@@ -11,6 +11,7 @@
 #include <cuda.h>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
+
 #define INIT_VALUE -1
 #define __CUDA__ __host__ __device__
 
@@ -134,29 +135,21 @@ public:
         return subMatrix;
     } 
    
-    __host__ Matrix<T> *genRandPermMatrix( ) 
+    __host__ void permute(unsigned int seed) 
     {
-        // generate a nRows * nCols randomized permuated matrix 
-	// use the built-in random_shuffle
-	Matrix<T> *randPermMatrix = new Matrix<T>( nRows, nCols ); 
+        std::srand(seed);
+	std::vector<int> baseSeq(nCols); 
+	for (int i = 0; i < nCols; i++)
+	  baseSeq[i] = i;
 
-	std::vector<int> myVect; 
-	for ( int i = 1; i < (nRows + 1); ++i ) 
+	for (int i = 0; i < nRows; i++) 
 	{
-	  myVect[i-1] = i;
-	}
-
-	for ( int j = 0; j < nCols ; ++j ) 
-	{
-	    std::random_shuffle( myVect.begin(), myVect.end() );
-	    for(int i = 0; i < nRows; ++i ) 
+	    std::random_shuffle(baseSeq.begin(), baseSeq.end());
+	    for (int j = 0; j < nCols; j++) 
 	    {
-	      randPermMatrix->setValue( i, j, myVect[i] );
+                data[i * nCols + j] = baseSeq[j];
 	    }
         }
-     
-	return randPermMatrix; 
-
     }
 
     __host__ void setValue(unsigned int geneIdx1, unsigned int geneIdx2, T val)
