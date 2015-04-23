@@ -11,7 +11,7 @@
 __device__ 
 bool chiSeq(unsigned int nSamples, unsigned int a, unsigned int b, unsigned int c, unsigned int d){
     if (a + b + c + d == nSamples) return true; // first cube
-    if (a + b + c + d <= 4) return false;
+    if (a + b + c + d < 8) return false;
     
     float expected = (a + b + c + d) / 4.0;
     float testStat = ((a - expected) * (a - expected) + (b - expected) * (b - expected) + 
