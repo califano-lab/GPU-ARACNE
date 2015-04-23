@@ -52,7 +52,7 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
         upperLeft = 0;
         lowerLeft = 0;
         lowerRight = 0;
-        unsigned int colIdx = threadIdx.x;
+        unsigned int colIdx = threadIdx.x; // at most 1024 samples
         unsigned int middleX = (cubeArray[head].left + cubeArray[head].right) / 2;
         unsigned int middleY = (cubeArray[head].upper + cubeArray[head].lower) / 2;
         unsigned int coordX = round(d_rankMatrix[d_TFGenesIdx[TFIdx] * nSamples + colIdx]);
@@ -119,17 +119,17 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
             if (cubeArray[head].totalCount == 0)
                 logRight = 1;
             else
-                logRight = (float)cubeArray[head].totalCount*nSamples / (float)(countX * countY);
+                logRight = (float)cubeArray[head].totalCount / (float)(countX * countY) ;
             // miValue and head on register
             // no locking needed
-            miValue += (float)cubeArray[head].totalCount/nSamples *  log(logRight);
+            miValue += (float)cubeArray[head].totalCount *  log(logRight);
             head = head + 1;
         }
         __syncthreads();
     } while(head < tail);
     if (threadIdx.x == 0)
         //printf("MI = %f\n", miValue);
-    d_rawGraph[TFIdx * nGenes + geneIdx] = miValue - miThreshold;
+    d_rawGraph[TFIdx * nGenes + geneIdx] = miValue / nSamples - log(nSamples)  - miThreshold; // ?? why minus miThreshold
 }
 
 // called by null model miAP()
@@ -169,20 +169,6 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
         unsigned int coordX = d_randomMatrix[rowIdx * nSamples + colIdx];
         unsigned int coordY = d_randomMatrix[rowIdx * 2 * nSamples + colIdx];
         
- /*       if (cubeArray[head].left <= coordX && coordX < middleX){
-            if (cubeArray[head].lower <= coordY && coordY < middleY){
-                atomicAdd(&lowerLeft, 1);
-            } else if (middleY <= coordY && coordY <= cubeArray[head].upper){
-                atomicAdd(&upperLeft, 1);
-            }
-        } else {
-            if (cubeArray[head].lower <= coordY && coordY < middleY){
-                atomicAdd(&lowerRight, 1);
-            } else if (middleY <= coordY && coordY <= cubeArray[head].upper){
-                atomicAdd(&upperRight, 1);
-            }
-        }
-*/
         // optimize to reduce thread divergence
         atomicAdd(&lowerLeft, cubeArray[head].left <= coordX & coordX < middleX & 
                 cubeArray[head].lower <= coordY & coordY < middleY);
@@ -230,15 +216,15 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
             if (cubeArray[head].totalCount == 0)
                 logRight = 1;
             else
-                logRight = (float)cubeArray[head].totalCount * nSamples / (float)(countX * countY);
+                logRight = (float)cubeArray[head].totalCount / (float)(countX * countY);
             // miValue and head on register
             // no locking needed
-            miValue += (float)cubeArray[head].totalCount/nSamples *  log(logRight);
+            miValue += (float)cubeArray[head].totalCount *  log(logRight);
             head = head + 1;
         }
         __syncthreads();
     } while(head < tail);
-    d_miResult[rowIdx] = miValue;
+    d_miResult[rowIdx] = miValue /nSamples - log(nSamples) ;
 }
 
 // this function computes the mutual information given the ranked experimental matrix
