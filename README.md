@@ -16,6 +16,8 @@ Ranking 20000 * 2560 matrix takes 4.3 sec.
 
 ## Constructing null model
 
+Random permuted data were fed into the GPU kernel (this indeed incures data shipping). 100000 pairs of random permuted samples were calculated for mutual information, which gives 100000 mutual information values. They are then sorted on GPU. The outliers (100) were thrown away. The cumulative mass function was computed and the tail is fit with linear regression on CPU. 
+
 ## Calculating mutual information 
 
 Kernel with thread dimension of nGenes * nGenes * nSamples is launched. Each pair of mutual information is computed with a BLOCK of threads. Threads in the block are used for counting. A queue data structure is kept in shared memory to record the state of adaptive partitioning.  
@@ -31,6 +33,8 @@ nTFs * nTFs * nGenes threads will be launched to prune  the graph. The result is
 One more thing to think of: if during DPI, two edges are equally small, which one should we cut?
 
 Another note: interaction with itself is not taken care of, aka. the degenerated triangle is left without special consideration to reduce thread divergence. 
+
+So far, the whole process from null model construction and data processing inequality takes around 3 minutes (including around 600 MB disk IO) with sample size of 200, gene number of 20000. Note that the Java multithread version running on 32 core computing cluster takes around 9 min (including disk IO). 
 
 ## Bootstrapping
 
