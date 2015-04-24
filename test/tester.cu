@@ -1,5 +1,5 @@
 // basic viable unit of execution.
-//#define TEST
+#define TEST
 #include "InputOutput.hpp"
 #include "Matrix.hpp"
 #include "pruneGraph.hpp"
@@ -42,12 +42,12 @@ int main(int argc, char *argv[])
     // rank data
     float *d_rankMat = dataMat->getRankMatrix();
 #ifdef TEST
-    geneLabels->print();
-    TFList->print();
-    dataMat->print();
+    //geneLabels->print();
+    //TFList->print();
+    //dataMat->print();
     Matrix<float> *h_ranked = new Matrix<float>(nGenes, nSamples);
     cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
-    h_ranked->print();
+    //h_ranked->print();
     delete h_ranked;
 #endif    
     delete dataMat;
@@ -57,8 +57,8 @@ int main(int argc, char *argv[])
     // this array is already in the GPU
     
     unsigned int seed = 1;
-//    float miThreshold = computeMiThreshold(nSamples, pValue, seed);
-    float miThreshold = computeMiThreshold(1000, 0.00000001, seed);
+    float miThreshold = computeMiThreshold(nSamples, pValue, seed);
+    // float miThreshold = computeMiThreshold(1000, 0.00000001, seed);
     std::cout << miThreshold << std::endl;
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array 
