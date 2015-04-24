@@ -57,8 +57,9 @@ int main(int argc, char *argv[])
     // this array is already in the GPU
     
     unsigned int seed = 1;
-    float miThreshold = computeMiThreshold(nSamples, pValue, seed);
-
+//    float miThreshold = computeMiThreshold(nSamples, pValue, seed);
+    float miThreshold = computeMiThreshold(1000, 0.00000001, seed);
+    std::cout << miThreshold << std::endl;
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array 
     float *d_miValue;

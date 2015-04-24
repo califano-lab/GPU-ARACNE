@@ -129,7 +129,7 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
     } while(head < tail);
     if (threadIdx.x == 0)
         //printf("MI = %f\n", miValue);
-    d_rawGraph[TFIdx * nGenes + geneIdx] = miValue / nSamples - log(nSamples)  - miThreshold; // ?? why minus miThreshold
+    d_rawGraph[TFIdx * nGenes + geneIdx] = miValue / nSamples + log((float)nSamples)  - miThreshold; // ?? why minus miThreshold
 }
 
 // called by null model miAP()
@@ -224,7 +224,7 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
         }
         __syncthreads();
     } while(head < tail);
-    d_miResult[rowIdx] = miValue /nSamples - log(nSamples) ;
+    d_miResult[rowIdx] = miValue /nSamples + log((float)nSamples) ;
 }
 
 // this function computes the mutual information given the ranked experimental matrix
@@ -238,7 +238,7 @@ void miAP(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int 
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_rawGraph, sizeof(T) * nTFs * nGenes) );
-    computeMi<<<gridDim, blockDim, nSamples>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph, miThreshold);
+    computeMi<<<gridDim, blockDim, 24000>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph, miThreshold);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
@@ -255,7 +255,7 @@ void miAP(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int nSampl
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_miResult, sizeof(T) * nPairs) );
-    computeMi<<<gridDim, blockDim, nSamples>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
+    computeMi<<<gridDim, blockDim, 24000>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
