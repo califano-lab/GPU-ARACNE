@@ -54,6 +54,7 @@ int main(int argc, char** argv)
       
     float *data;			// original data set given to device
     float *results;		        // results returned from device
+
     
     cl_device_id device_id[2];          // compute device id
     cl_context context;                 // compute context
@@ -68,6 +69,7 @@ int main(int argc, char** argv)
     // load data
     printf("reading openEXR file %s\n", argv[1]);
     int w, h;			       // the width & height of the image, used frequently!
+    results = (float *) malloc ( sizeof(float) * 3 * w * h  );
     readOpenEXRFile (argv[1], &data, w, h);
 
     // set 
@@ -234,18 +236,6 @@ int main(int argc, char** argv)
         printf("Error: Failed to set kernel arguments! %d\n", err);
         exit(1);
     }
-
-    
-    //
-    // Get the maximum work group size for executing the kernel on the device
-    //
-   // err = clGetKernelWorkGroupInfo(kernel, device_id[whichdev], CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), local, NULL);
-   // if (err != CL_SUCCESS)
-   // {
-   //     printf("Error: Failed to retrieve kernel work group info! %d\n", err);
-   //     exit(1);
-   // }
-   // printf("Got %ld, %ld  for the maximum work group size\n", local[0], local[1]);
 
     
     //
