@@ -32,13 +32,13 @@ const char *KernelSource = "\n" \
 "__kernel void rgb2grey(								 \n" \
 "  __global float *input,							   	 \n" \
 "  __global float *output,							   	 \n" \
-"  int w,										 \n" \
-"  int h)										 \n" \
+"  const int w,										 \n" \
+"  const int h)										 \n" \
 "{										   	 \n" \
 "    size_t id0 = get_global_id( 0 ) ;						   	 \n" \
 "    size_t id1 = get_global_id( 1 );						   	 \n" \
 "    if ( id0 < 0 || id1 < 0 || id0 >= w || id1 >= h ) return;				 \n" \
-"    unsigned int idx = ((id0 * w) + id1) * 3;					   	 \n" \
+"    unsigned int idx = ((id1 * w) + id0) * 3;					   	 \n" \
 "    float L = 0.2126f * input[idx] + 0.7152f * input[idx+1] + 0.0722f * input[idx+2];	 \n" \
 "    output[idx] = L;									 \n" \
 "    output[idx+1] = L;		     							 \n" \
@@ -71,8 +71,8 @@ int main(int argc, char** argv)
     readOpenEXRFile (argv[1], &data, w, h);
 
     // set 
-    size_t global[2] = {w, h };	       // global domain size for our calculation
-    size_t local[2] = {1, 1};                  // local work group size for our calculation
+    size_t global[2] ;	       // global domain size for our calculation
+    size_t local[2]  = {32, 32};                  // local work group size for our calculation
 
    
     //
@@ -239,19 +239,21 @@ int main(int argc, char** argv)
     //
     // Get the maximum work group size for executing the kernel on the device
     //
-    err = clGetKernelWorkGroupInfo(kernel, device_id[whichdev], CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), local, NULL);
-    if (err != CL_SUCCESS)
-    {
-        printf("Error: Failed to retrieve kernel work group info! %d\n", err);
-        exit(1);
-    }
-    printf("Got %ld, %ld  for the maximum work group size\n", local[0], local[1]);
+   // err = clGetKernelWorkGroupInfo(kernel, device_id[whichdev], CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), local, NULL);
+   // if (err != CL_SUCCESS)
+   // {
+   //     printf("Error: Failed to retrieve kernel work group info! %d\n", err);
+   //     exit(1);
+   // }
+   // printf("Got %ld, %ld  for the maximum work group size\n", local[0], local[1]);
 
     
     //
     // Execute the kernel over the entire range of our 1d input data set
     // using the maximum number of work group items for this device
     //
+    global[0] = ceil(w/ 32.0) * 32; 
+    global[1] = ceil(h /32.0) * 32;
     printf ("global dim %ld, %ld \n", global[0], global[1]);
      
     err = clEnqueueNDRangeKernel(commands, kernel, 2, NULL, global, local, 0, NULL, NULL);
@@ -271,7 +273,7 @@ int main(int argc, char** argv)
     //
     // Read back the results from the device to verify the output
     //
-    err = clEnqueueReadBuffer( commands, output, CL_TRUE, 0, sizeof(float) * w * h, results, 0, NULL, NULL );  
+    err = clEnqueueReadBuffer( commands, output, CL_TRUE, 0, sizeof(float) * 3 * w * h, results, 0, NULL, NULL );  
     if (err != CL_SUCCESS)
     {
         printf("Error: Failed to read output array! %d\n", err);
