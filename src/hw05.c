@@ -69,9 +69,8 @@ int main(int argc, char** argv)
     // load data
     printf("reading openEXR file %s\n", argv[1]);
     int w, h;			       // the width & height of the image, used frequently!
-    results = (float *) malloc ( sizeof(float) * 3 * w * h  );
     readOpenEXRFile (argv[1], &data, w, h);
-
+    results = (float *) malloc ( sizeof(float) * 3 * w * h  );
     // set 
     size_t global[2] ;	       // global domain size for our calculation
     size_t local[2]  = {32, 32};                  // local work group size for our calculation
