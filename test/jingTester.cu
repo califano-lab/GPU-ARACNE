@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
     float *d_rankMat;
     float *d_miValue;
     float *d_bsMiValue;
+    int *d_bsMiCount;
     nBootstraps = 1;
     for (int ibs = 0; ibs < nBootstraps; ibs++ ) {
 
