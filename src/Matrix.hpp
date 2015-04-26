@@ -134,6 +134,22 @@ public:
         }
         return subMatrix;
     } 
+
+    __host__ Matrix<T> *bootstrapMatrix( ) 
+    {
+	
+        Matrix<T> *bsMatrix = new Matrix<T>(nRows,  numCols);
+	int bsj; 
+        for (int i = 0; i < nRows; i++){
+            for (int j = 0; i < numCols; ++j ){
+		// generate random indexs with replicates
+		bsj = (rand() % (int)(nCols - 1));
+                bsMatrix->setValue( i, j, data[ i * nCols + colsIdx[bsj] ] );
+            }
+        }
+        return bsMatrix;
+    } 
+ 
    
     __host__ void permute(unsigned int seed) 
     {
