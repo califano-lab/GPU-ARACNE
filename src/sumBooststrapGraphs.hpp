@@ -12,22 +12,26 @@
 
 
 template<typename T>
-__global__
-void label(T *d_rawGraph, unsigned int nRows, unsigned int nCols, bool *d_decision, unsigned int *d_TFGeneIdx)
+__host__
+void matTo3cols(T *graphMiMat, *graphCountMat, unsigned int nRows, unsigned int nCols, T cutValue )
 {
-    unsigned int TF1 = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int TF2 = blockIdx.y * blockDim.y + threadIdx.y;
-    if (TF1 >= nRows || TF2 >= nRows) return;
-    T val0 = d_rawGraph[TF1 * nCols + d_TFGeneIdx[TF2]];   
-    if  (val0 < 0) return;
-    unsigned int geneIdx = blockIdx.z * blockDim.z + threadIdx.z;
-    T val1 = d_rawGraph[TF1 * nCols + geneIdx];
-    T val2 = d_rawGraph[TF2 * nCols + geneIdx];  
-    if (val1 < 0 || val2 < 0) return;
-    
-    if (val0 < val1 && val0 < val2) d_decision[TF1 * nCols + d_TFGeneIdx[TF2]] = false;
-    if (val1 < val0 && val1 < val2) d_decision[TF1 * nCols + geneIdx] = false;
-    if (val2 < val0 && val2 < val1) d_decision[TF2 * nCols + geneIdx] = false;
+    T tfidx[];
+    T geneidx[];
+    T mi[];
+    T count[];
+    for (int i = 0; i < nRows; ++i )
+    {
+      for (int j = 0; i< nCols; ++j )
+      {
+	id = i * nCols + j;
+	mi = graphMat[ i * nCols + j ];
+	if( mi > cutValue )
+	{
+	  outGraph[i * 4 ] = {i ,j , mi, graphCountMat [id] };
+	} 
+      }
+    }
+    // 
 }
 
 template<typename T>
@@ -48,14 +52,14 @@ template<typename T>
 __host__
 void graphMatrixTo3cols(T *d_rawGraph, unsigned int nRows, unsigned int nCols, unsigned int *d_TFGeneIdx)
 {
-    bool *d_;
-    HANDLE_ERROR(cudaMalloc((void **)&d_decision, sizeof(bool) * nRows * nCols));
+    bool *d_graph3cols;
+    HANDLE_ERROR(cudaMalloc((void **)&d_graph3cols, sizeof(float) * nRows * nCols )); // TODO need to calculate the size 
     // set memory to -1 initializes all values to true
-    HANDLE_ERROR(cudaMemset((void *)d_decision, -1, sizeof(bool) * nRows * nCols));
-    // sequentially launche two kernels
-    dim3 blockDimLabel(8, 8, 16);
-    dim3 gridDimLabel(ceil(nRows / 8.0), ceil(nRows / 8.0), ceil(nCols / 16.0));
-    label<<<gridDimLabel, blockDimLabel>>>(d_rawGraph, nRows, nCols, d_decision, d_TFGeneIdx);
+    dim3 bDim(8, 8, 16);
+    dim3 gDim(ceil(nRows /(1.0 * bDim.x )), ceil(nRows /(1.0 * bDim.y)), ceil(nCols /(1.0 * bDim.z) ));
+    float cutValue = 0.0;
+    matTo3cols_d <<< gDim, bDim >>>(d_rawGraph, nRows, nCols, cutValue );
+
     HANDLE_ERROR(cudaGetLastError());
     HANDLE_ERROR(cudaDeviceSynchronize());
     dim3 blockDimCut(16, 64, 1);
