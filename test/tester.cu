@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 #ifdef TEST
     Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
     cudaMemcpy((void *)h_miValue->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
+    HANDLE_ERROR(cudaDeviceSynchronize());
     h_miValue->print();
     delete h_miValue;
 #endif
@@ -78,6 +79,7 @@ int main(int argc, char *argv[])
 #ifdef TEST
     Matrix<float> *h_miValue_pruned = new Matrix<float>(nTFs, nGenes);
     cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
+    HANDLE_ERROR(cudaDeviceSynchronize());
     h_miValue_pruned->print();
     delete h_miValue_pruned;
 #endif

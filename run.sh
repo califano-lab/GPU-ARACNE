@@ -10,4 +10,4 @@ pValue=0.0000001
 echo " Usage: ./bin/tester <tffile> <datafile> <ntfs> <ngenes> <nSamples> <nBootstraps> <pValue>"
 cmd="$PWD/bin/tester  $tffile $expfile $ntfs $ngenes $nSamples $nBootstraps $pValue"
 echo $cmd
-$cmd > Result_test_200.txt
+$cmd > $PWD/data/Result_test_200.txt
