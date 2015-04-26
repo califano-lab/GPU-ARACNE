@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <time.h> 
 #include <math.h> 
-#include <conio.h>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 
