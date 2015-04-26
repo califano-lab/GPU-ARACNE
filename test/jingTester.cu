@@ -42,16 +42,23 @@ int main(int argc, char *argv[])
     // calculate MIcutoff
     // 
     unsigned int seed = 1;
+    printf( "Step 1 miThreshold ...  ") ;
     float miThreshold = computeMiThreshold(nSamples, pValue, seed);
-    printf( "Finish miThreshold ... %f \n ", miThreshold) ;
+    printf( " Done %f \n", miThreshold) ;
 
     // 
     // do  bootstraps on  orignal matrix
     // 
+
+    printf( "Step 2 Bootstrapping ... "); 
     unsigned int *d_TFGeneIdx;
     createMapping(&d_TFGeneIdx, TFList, geneLabels, nTFs, nGenes);
 
     Matrix<float> *d_bsMat  = new Matrix<float>(nGenes, nSamples);
+
+    d_bsMat = dataMat->bootstrapMatrix();
+    printf( "Done\n"); 
+
     Matrix<float> *h_ranked = new Matrix<float>(nGenes, nSamples);
     float *d_rankMat;
     float *d_miValue;
@@ -60,22 +67,31 @@ int main(int argc, char *argv[])
     nBootstraps = 1;
     for (int ibs = 0; ibs < nBootstraps; ibs++ ) {
 
-      printf( " Bootstrapping ..."); 
       d_bsMat = dataMat->bootstrapMatrix();
       d_rankMat = d_bsMat->getRankMatrix();
-
+#ifdef TEST
+      printf("Original data -----------------\n");
+      //dataMat->printHead();
+      printf("Bootstrap data-----------------\n");
+      //d_bsMat->printHead();
+      printf("bs rank data-----------------\n");
       cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
+      HANDLE_ERROR(cudaDeviceSynchronize());
+      h_ranked->printHead();
+#endif
 
-      printf( " AdaP ..."); 
+      printf( "AdaP ... "); 
       miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, miThreshold);
-
+      printf( " \n"); 
       // DPI 
-      printf( " DPI ..."); 
+
+      printf( "DPI ..."); 
       pruneGraph(d_miValue, nTFs, nGenes, d_TFGeneIdx);
-      
+      printf( "\n"); 
+
       // consolidate
-      printf( " consolidate ..."); 
-      
+      printf( "consolidate ..."); 
+      printf( " \n"); 
       //Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
       //cudaMemcpy((void *)h_miValue->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
       //HANDLE_ERROR(cudaDeviceSynchronize());

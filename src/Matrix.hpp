@@ -128,7 +128,7 @@ public:
 	// if ( numCols == 0 ) return; 
         Matrix<T> *subMatrix = new Matrix<T>(nRows,  numCols);
         for (int i = 0; i < nRows; i++){
-            for (int j = 0; i < numCols; ++j ){
+            for (int j = 0; j < numCols; ++j ){
                 subMatrix->setValue( i, j, data[ i * nCols + colsIdx[j] ] );
             }
         }
@@ -140,10 +140,10 @@ public:
 	
         Matrix<T> *bsMatrix = new Matrix<T>(nRows,  nCols);
 	int bsj; 
-        for (int i = 0; i < nRows; i++){
-            for (int j = 0; i < nCols; ++j ){
+        for (int j = 0; j < nCols; ++j ){
+	    bsj = (rand() % (int)(nCols - 1));
+	    for (int i = 0; i < nRows; i++){
 		// generate random indexs with replicates
-		bsj = (rand() % (int)(nCols - 1));
                 bsMatrix->setValue( i, j, data[ i * nCols + bsj ] );
             }
         }
@@ -236,6 +236,17 @@ public:
         }
         std::cout << std::endl;
     }
+    __host__ void printHead()
+    {
+        for (int i = 0; i < 5; i++){
+            for (int j = 0; j < 5; j++){
+                std::cout << this->element(i, j) << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
 };
 
 #endif
