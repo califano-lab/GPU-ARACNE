@@ -138,13 +138,13 @@ public:
     __host__ Matrix<T> *bootstrapMatrix( ) 
     {
 	
-        Matrix<T> *bsMatrix = new Matrix<T>(nRows,  numCols);
+        Matrix<T> *bsMatrix = new Matrix<T>(nRows,  nCols);
 	int bsj; 
         for (int i = 0; i < nRows; i++){
-            for (int j = 0; i < numCols; ++j ){
+            for (int j = 0; i < nCols; ++j ){
 		// generate random indexs with replicates
 		bsj = (rand() % (int)(nCols - 1));
-                bsMatrix->setValue( i, j, data[ i * nCols + colsIdx[bsj] ] );
+                bsMatrix->setValue( i, j, data[ i * nCols + bsj ] );
             }
         }
         return bsMatrix;

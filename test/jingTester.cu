@@ -45,48 +45,63 @@ int main(int argc, char *argv[])
     float miThreshold = computeMiThreshold(nSamples, pValue, seed);
     printf( "Finish miThreshold ... %f \n ", miThreshold) ;
 
-
     // 
     // do  bootstraps on  orignal matrix
     // 
     unsigned int *d_TFGeneIdx;
     createMapping(&d_TFGeneIdx, TFList, geneLabels, nTFs, nGenes);
 
-    float *d_bsMat;
+    Matrix<float> *d_bsMat  = new Matrix<float>(nGenes, nSamples);
+    Matrix<float> *h_ranked = new Matrix<float>(nGenes, nSamples);
     float *d_rankMat;
     float *d_miValue;
-    for (ibs = 0; i < nBootstraps; i ++ ) {
+    float *d_bsMiValue;
+    nBootstraps = 1;
+    for (int ibs = 0; ibs < nBootstraps; ibs++ ) {
 
+      printf( " Bootstrapping ..."); 
       d_bsMat = dataMat->bootstrapMatrix();
       d_rankMat = d_bsMat->getRankMatrix();
 
-      Matrix<float> *h_ranked = new Matrix<float>(nGenes, nSamples);
       cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
 
+      printf( " AdaP ..."); 
       miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, miThreshold);
 
-      Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
-      cudaMemcpy((void *)h_miValue->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
-      HANDLE_ERROR(cudaDeviceSynchronize());
-      h_miValue->print();
-      delete h_miValue;
-#end  if
-      
-      // DPI to prune network
+      // DPI 
+      printf( " DPI ..."); 
       pruneGraph(d_miValue, nTFs, nGenes, d_TFGeneIdx);
-
+      
+      // consolidate
+      printf( " consolidate ..."); 
+      
+      //Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
+      //cudaMemcpy((void *)h_miValue->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
+      //HANDLE_ERROR(cudaDeviceSynchronize());
+      //h_miValue->print();
+      //delete h_miValue;
+      //  Matrix<float> *h_miValue_pruned = new Matrix<float>(nTFs, nGenes);
+      // cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
+      // HANDLE_ERROR(cudaDeviceSynchronize());
+      // h_miValue_pruned->print();
+      // delete h_miValue_pruned;
+     
     }
 
-delete h_ranked;
-delete dataMat;
-#ifdef TEST
-    Matrix<float> *h_miValue_pruned = new Matrix<float>(nTFs, nGenes);
-    cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
+//
+//ship d_bsMiValue and d_bsMiCount back, fit poisson model 
+//
+    Matrix<float> *h_bsMiValue = new Matrix<float>(nTFs, nGenes);
+    Matrix<int>   *h_bsMiCount = new Matrix<int>(nTFs, nGenes);
+    
+    cudaMemcpy((void *)h_bsMiValue->memAddr(), (void *)d_bsMiValue, h_bsMiValue->size(), cudaMemcpyDeviceToHost);
+    cudaMemcpy((void *)h_bsMiCount->memAddr(), (void *)d_bsMiCount, h_bsMiCount->size(), cudaMemcpyDeviceToHost);
     HANDLE_ERROR(cudaDeviceSynchronize());
-    h_miValue_pruned->print();
-    delete h_miValue_pruned;
-#endif
-    // output data
+    delete h_bsMiValue;
+    delete h_bsMiCount;
+     
+    delete h_ranked;
+    delete dataMat;
 
     // cleanup
     delete TFList;
