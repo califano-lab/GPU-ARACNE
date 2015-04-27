@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array 
     float *d_miValue;
-    miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, miThreshold);
+    miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, (float)0);
 
 #ifdef TEST
     Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
