@@ -1,7 +1,7 @@
 #ifndef SUMBOOSTSTRAPGRAPHS_H
 #define SUMBOOSTSTRAPGRAPHS_H
 #include <cuda.h>
-#include <random>
+#include <cstlib>
 #include "util.hpp"
 #define POISSONCUT 0.05
 // the caller launches 2000 * 2000 * 20000 threads
@@ -69,11 +69,14 @@ void poissonIntegrate(T *bsMiGraph, int *bsCountGraph, long totalOccurence, long
      {
        id = i * nCols + j;
        mi = bsMiGraph->element(i , j );
-       tempOccurence = bsCountGraph->element( i, j ) ; 
-       tempPvalue = pcdf.find(tempOccurence)->second;
-       if( tempPvalue > POISSONCUT )
+       if( ! mi < 0   )
        { 
-         printf("%s\t%s\t%f\t%f\n", TFList->element(i,0) ,geneLabels->element(j,0) , mi, tempPvalue  );
+	 if( tempPvalue > POISSONCUT )
+	 {
+	  tempOccurence = bsCountGraph->element( i, j ) ; 
+	  tempPvalue = pcdf.find(tempOccurence)->second;
+	  printf("%s\t%s\t%f\t%f\n", TFList->element(i,0) ,geneLabels->element(j,0) , mi, tempPvalue  );
+	 }
        } 
      }
    }
