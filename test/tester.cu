@@ -51,7 +51,8 @@ int main(int argc, char *argv[])
     h_ranked->print();
     delete h_ranked;
 #endif    
-    
+    delete dataMat;
+
     // calculate MIcutoff
     // at this pint d_rankMat is a nGenes * nSamples matrix with rank
     // this array is already in the GPU
@@ -88,7 +89,6 @@ int main(int argc, char *argv[])
     // output data
 
     // cleanup
-    delete dataMat;
     cudaFree(d_rankMat);
     cudaFree(d_TFGeneIdx);
     cudaFree(d_miValue);
