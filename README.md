@@ -38,3 +38,16 @@ So far, the whole process from null model construction and data processing inequ
 
 ## Bootstrapping
 
+random sample the same number of columns from the original data, ship it to device
+
+2 additional matrix on device, one for the sum of all MIs for each bootstrap, and the other for counts of occurence this edge among all bootstraps
+
+overall edges and occurence were calculated on device
+
+the 2 bootstrap matrix along with the total edges and occurence are shipped back to host
+
+poisson model is generated with mean edge calculated from total occurence / total edge, and for each edge, the p-value was calculated based on the occurence of this edge
+
+for each edge, if possion pvalue is less then 0.05(bonferroni corrected), then tf, gene, meanMI, and poisson pvalue were be write out. 
+
+Output: 4 column text file 
