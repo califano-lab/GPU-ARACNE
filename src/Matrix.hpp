@@ -19,7 +19,7 @@
 //matrix implemented in 1-D array
 
 template <typename T>
-__global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols)
+__global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols, unsigned int *d_rank)
 {
     unsigned int tabIdx = blockDim.x * blockIdx.x + threadIdx.x;
     if (tabIdx >= tabletSize) return;
@@ -31,7 +31,7 @@ __global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols)
 
     thrust::stable_sort_by_key(thrust::seq, d_data+tabIdx*nCols, d_data+tabIdx*nCols + nCols, helperArray);
     for (int i = 0; i < nCols; i++){
-        d_data[tabIdx * nCols + helperArray[i]] = (T)i;
+        d_rank[tabIdx * nCols + helperArray[i]] = i;
     }
     delete[] helperArray;
 }
@@ -51,8 +51,8 @@ public:
     {
         nRows = size;
         nCols = size;
-        HANDLE_ERROR(cudaHostAlloc((void **)&data, size * size * sizeof(T), 0));
-        //data = new T[nRows * nCols];
+        //HANDLE_ERROR(cudaHostAlloc((void **)&data, size * size * sizeof(T), 0));
+        data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = (T)INIT_VALUE;
@@ -75,8 +75,8 @@ public:
     {
         nRows = m;
         nCols = n;
-        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
-        //data = new T[nRows * nCols];
+        //HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
+        data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = (T)INIT_VALUE;
@@ -89,8 +89,8 @@ public:
     {
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
-        //data = new T[nRows * nCols];
+        //HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
+        data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = rhs.data[i * nCols + j];
@@ -105,8 +105,8 @@ public:
         HANDLE_ERROR(cudaFreeHost(data));
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
-        //data = new T[nRows * nCols];
+        //HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
+        data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = rhs.data[i * nCols + j];
@@ -118,8 +118,8 @@ public:
     // destructor
     __host__ ~Matrix()
     {
-        HANDLE_ERROR(cudaFreeHost(data));
-        //delete[] data;
+        //HANDLE_ERROR(cudaFreeHost(data));
+        delete[] data;
     }
 
     // check interaction
@@ -180,16 +180,16 @@ public:
     }
 
     // rank each row
-    __host__ T *getRankMatrix()
+    __host__ unsigned int *getRankMatrix()
     {
         T *d_data;
         cudaMalloc((void **)&d_data, size());
         HANDLE_ERROR(cudaMemcpy((void *)d_data, (void *)data, size(), cudaMemcpyHostToDevice));
+        unsigned int *d_rank;
+        cudaMalloc((void **)&d_rank, nRows * nCols * sizeof(int));
         unsigned int tabletSize = 128;
         unsigned int nRows_cpy = nRows;
         unsigned int realTabletSize; 
-        cudaStream_t stream0;
-        HANDLE_ERROR(cudaStreamCreate( &stream0));
         for (int i = 0; i < ceil(nRows / (1.0*tabletSize)); i++){
             if (nRows_cpy >= tabletSize){
                 realTabletSize = tabletSize;
@@ -197,14 +197,16 @@ public:
             } else {
                 realTabletSize = nRows_cpy;
             }
+
             dim3 threadsPerBlock(128, 1, 1);
             dim3 blocksPerGrid((unsigned int)ceil(realTabletSize/(1.0 * 128)), 1, 1);
-            rankRow<<<blocksPerGrid, threadsPerBlock, 0, stream0>>>
-                (d_data + i * tabletSize * nCols, realTabletSize, nCols);
+            rankRow<<<blocksPerGrid, threadsPerBlock>>>
+                (d_data + i * tabletSize * nCols, realTabletSize, nCols, d_rank + i * tabletSize * nCols);
             HANDLE_ERROR(cudaGetLastError());
-            HANDLE_ERROR(cudaStreamSynchronize(stream0));
+            HANDLE_ERROR(cudaDeviceSynchronize());
         }
-        return d_data;
+        HANDLE_ERROR(cudaFree(d_data));
+        return d_rank;
     }
     
     __host__ T& element(unsigned int geneIdx1, unsigned int geneIdx2)

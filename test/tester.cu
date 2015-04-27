@@ -36,7 +36,8 @@ int main(int argc, char *argv[])
     unsigned int *d_TFGeneIdx;
     createMapping(&d_TFGeneIdx, &TFList, &geneLabels, nTFs, nGenes);
     // rank data
-    float *d_rankMat = dataMat->getRankMatrix();
+    unsigned int *d_rankMat = dataMat->getRankMatrix();
+
 #ifdef TEST
     for (int i = 0; i < TFList.size(); i++){
         std::cout<< TFList[i] << std::endl;
@@ -45,20 +46,19 @@ int main(int argc, char *argv[])
         std::cout << geneLabels[i] << std::endl;
     }
     dataMat->print();
-    Matrix<float> *h_ranked = new Matrix<float>(nGenes, nSamples);
+    Matrix<unsigned int> *h_ranked = new Matrix<unsigned int>(nGenes, nSamples);
     cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
     h_ranked->print();
     delete h_ranked;
 #endif    
-    delete dataMat;
-
+    
     // calculate MIcutoff
     // at this pint d_rankMat is a nGenes * nSamples matrix with rank
     // this array is already in the GPU
     
     unsigned int seed = 1;
-    float miThreshold = computeMiThreshold(nSamples, pValue, seed);
-    // float miThreshold = computeMiThreshold(1000, 0.00000001, seed);
+    //float miThreshold = computeMiThreshold(nSamples, pValue, seed);
+    float miThreshold = computeMiThreshold(1000, 0.00000001, seed);
 #ifdef TEST
     std::cout << miThreshold << std::endl;
 #endif
@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
     // output data
 
     // cleanup
+    delete dataMat;
     cudaFree(d_rankMat);
     cudaFree(d_TFGeneIdx);
     cudaFree(d_miValue);

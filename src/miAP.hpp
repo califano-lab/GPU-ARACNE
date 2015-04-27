@@ -23,7 +23,7 @@ bool chiSeq(unsigned int nSamples, unsigned int a, unsigned int b, unsigned int 
 // called by experiment miAP()
 template <typename T>
 __global__ 
-void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
+void computeMi(unsigned int *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
         unsigned int *d_TFGenesIdx, T *d_rawGraph, T miThreshold)
 {
     unsigned int TFIdx = blockIdx.x;
@@ -55,8 +55,8 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
         unsigned int colIdx = threadIdx.x; // at most 1024 samples
         unsigned int middleX = (cubeArray[head].left + cubeArray[head].right) / 2;
         unsigned int middleY = (cubeArray[head].upper + cubeArray[head].lower) / 2;
-        unsigned int coordX = round(d_rankMatrix[d_TFGenesIdx[TFIdx] * nSamples + colIdx]);
-        unsigned int coordY = round(d_rankMatrix[geneIdx * nSamples + colIdx]);
+        unsigned int coordX = (d_rankMatrix[d_TFGenesIdx[TFIdx] * nSamples + colIdx]);
+        unsigned int coordY = (d_rankMatrix[geneIdx * nSamples + colIdx]);
 /*
         if (cubeArray[head].left <= coordX && coordX < middleX){
             if (cubeArray[head].lower <= coordY && coordY < middleY){
@@ -126,7 +126,6 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
             head = head + 1;
         }
         __syncthreads();
-        printf("%d %d\n", head, tail);
     } while(head < tail);
     d_rawGraph[TFIdx * nGenes + geneIdx] = miValue / nSamples + log((float)nSamples)  - miThreshold; // ?? why minus miThreshold
 }
@@ -230,7 +229,7 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
 // X and Y are mapped faciliated by d_TFGenesIdx (see details in source code)
 // function called during actual MI computation 
 template <typename T>
-void miAP(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
+void miAP(unsigned int *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned int nSamples, 
         unsigned int *d_TFGeneIdx, T **d_rawGraph, T miThreshold)
 {
     dim3 gridDim(nTFs, nGenes, 1);
