@@ -1,6 +1,5 @@
 // basic viable unit of execution.
-//#define TEST
-//#define DEBUG
+#define TEST
 #include "InputOutput.hpp"
 #include "Matrix.hpp"
 #include "pruneGraph.hpp"
@@ -26,25 +25,25 @@ int main(int argc, char *argv[])
     unsigned int nSamples = atoi(argv[5]);
     unsigned int nBootstraps = atoi(argv[6]);
     float pValue = atof(argv[7]);
-
     // import transcription factor list
-    Matrix<std::string> *TFList;
+    std::vector<std::string> TFList(nTFs);
     loadMatrix(NULL, &TFList, TFFilename, nTFs, 1);
-    
     // import data
     Matrix<float> *dataMat;
-    Matrix<std::string> *geneLabels;
+    std::vector<std::string> geneLabels(nGenes);
     loadMatrix(&dataMat, &geneLabels, dataFilename, nGenes, nSamples);
-    
     // create TF to genes index mapping
     unsigned int *d_TFGeneIdx;
-    createMapping(&d_TFGeneIdx, TFList, geneLabels, nTFs, nGenes);
-
+    createMapping(&d_TFGeneIdx, &TFList, &geneLabels, nTFs, nGenes);
     // rank data
     float *d_rankMat = dataMat->getRankMatrix();
 #ifdef TEST
-    geneLabels->print();
-    TFList->print();
+    for (int i = 0; i < TFList.size(); i++){
+        std::cout<< TFList[i] << std::endl;
+    }
+    for (int i = 0; i < geneLabels.size(); i++){
+        std::cout << geneLabels[i] << std::endl;
+    }
     dataMat->print();
     Matrix<float> *h_ranked = new Matrix<float>(nGenes, nSamples);
     cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
@@ -89,8 +88,6 @@ int main(int argc, char *argv[])
     // output data
 
     // cleanup
-    delete TFList;
-    delete geneLabels;
     cudaFree(d_rankMat);
     cudaFree(d_TFGeneIdx);
     cudaFree(d_miValue);

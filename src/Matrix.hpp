@@ -55,7 +55,7 @@ public:
         //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
-                data[i * nCols + j] = INIT_VALUE;
+                data[i * nCols + j] = (T)INIT_VALUE;
             }
         }
     }
@@ -75,11 +75,11 @@ public:
     {
         nRows = m;
         nCols = n;
-        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), 0));
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
         //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
-                data[i * nCols + j] = INIT_VALUE;
+                data[i * nCols + j] = (T)INIT_VALUE;
             }
         }
     }
@@ -89,7 +89,7 @@ public:
     {
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), 0));
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
         //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
@@ -102,10 +102,10 @@ public:
     __host__ Matrix& operator = (const Matrix<T>& rhs)
     {
         if (this->data == rhs.data) return *this;
-        delete[] data;
+        HANDLE_ERROR(cudaFreeHost(data));
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), 0));
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
         //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){

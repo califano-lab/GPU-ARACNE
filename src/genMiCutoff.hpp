@@ -45,8 +45,7 @@ float computeMiThreshold(unsigned int nSamples, float pValue, unsigned int seed)
     float *h_miResult = new float[PAIRS];
     HANDLE_ERROR (cudaMemcpy((void *)h_miResult, (void *)d_miResult, 
                 PAIRS * sizeof (float), cudaMemcpyDeviceToHost) );
-    HANDLE_ERROR (cudaDeviceSynchronize());
-    
+    HANDLE_ERROR (cudaDeviceSynchronize());    
     // copy (PAIRS - OUTLIERS - FITTING) to (PAIRS - OUTLIERS)
     int firstPointToFit = PAIRS - OUTLIERS - FITTING;
     float *X_logPValues = new float[FITTING];

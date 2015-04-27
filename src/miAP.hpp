@@ -126,9 +126,8 @@ void computeMi(T *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, unsigned
             head = head + 1;
         }
         __syncthreads();
+        printf("%d %d\n", head, tail);
     } while(head < tail);
-    if (threadIdx.x == 0)
-        //printf("MI = %f\n", miValue);
     d_rawGraph[TFIdx * nGenes + geneIdx] = miValue / nSamples + log((float)nSamples)  - miThreshold; // ?? why minus miThreshold
 }
 
