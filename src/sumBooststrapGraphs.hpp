@@ -3,7 +3,6 @@
 #include <cuda.h>
 #include <random>
 #include "util.hpp"
-
 #define POISSONCUT 0.05
 // the caller launches 2000 * 2000 * 20000 threads
 // the kernel is implemented here
@@ -29,7 +28,7 @@ void sumBooststrapGraphs(T *d_sumMiGraph, int *d_sumCountGraph, T *d_currGraph, 
 }
 
 __global__
-void calMean4Poisson( T *d_sumMiGraph, T *d_sumCountGraph, unsigned int nRows, unsigned int nCols, long totalEdges, long totalOccurence)
+void calMean4Poisson_d( T *d_sumMiGraph, T *d_sumCountGraph, unsigned int nRows, unsigned int nCols, long totalEdges, long totalOccurence)
 {
   // to get mean mi for each edge, average edges of all bootstraping
   // call after all bootstraps finished 
@@ -50,7 +49,7 @@ void calMean4Poisson( T *d_sumMiGraph, T *d_sumCountGraph, unsigned int nRows, u
 
 template<typename T>
 __host__
-void poissonIntegrate(T *bsMiGraph, int *bsCountGraph, long totalOccurence, long totalEdges,  unsigned int nRows, unsigned int nCols, Matrix<string> *TFList, Matrix<string> *geneLabels, float *outMi, float *poissonPvalue)
+void poissonIntegrate(T *bsMiGraph, int *bsCountGraph, long totalOccurence, long totalEdges,  unsigned int nRows, unsigned int nCols, Matrix<string> *TFList, Matrix<string> *geneLabels)
 {
    // host function used to calculate poisson model for 100 bootstraps  
    // default poisson pvalue set to 0.05
@@ -60,7 +59,9 @@ void poissonIntegrate(T *bsMiGraph, int *bsCountGraph, long totalOccurence, long
    map <int, float > *pcdf;
    poissonLibrary( meanEdges, totalOccurence, &pcdf);
 
-   float mi; int id; long tempOccurence; 
+   float mi; int id; 
+   long tempOccurence; 
+   float tempPvalue;  
    printf("TF\tGene\tMI\tpoissonPvalue\n");
    for (int i = 0; i < nRows; ++i )
    {
@@ -68,10 +69,11 @@ void poissonIntegrate(T *bsMiGraph, int *bsCountGraph, long totalOccurence, long
      {
        id = i * nCols + j;
        mi = bsMiGraph->element(i , j );
-       if( mi > POISSONCUT )
+       tempOccurence = bsCountGraph->element( i, j ) ; 
+       tempPvalue = pcdf.find(tempOccurence)->second;
+       if( tempPvalue > POISSONCUT )
        { 
-         tempOccurence = bsCountGraph->element( i, j ) ; 
-         printf("%s\t%s\t%f\t%f\n", TFList->element(i,0) ,geneLabels->element(j,0) , mi, pcdf.find(tempOccurence)->second  );
+         printf("%s\t%s\t%f\t%f\n", TFList->element(i,0) ,geneLabels->element(j,0) , mi, tempPvalue  );
        } 
      }
    }
