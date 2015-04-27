@@ -51,7 +51,8 @@ public:
     {
         nRows = size;
         nCols = size;
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, size * size * sizeof(T), 0));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = INIT_VALUE;
@@ -74,7 +75,8 @@ public:
     {
         nRows = m;
         nCols = n;
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), 0));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = INIT_VALUE;
@@ -87,7 +89,8 @@ public:
     {
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), 0));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = rhs.data[i * nCols + j];
@@ -102,7 +105,8 @@ public:
         delete[] data;
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), 0));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = rhs.data[i * nCols + j];
@@ -114,7 +118,8 @@ public:
     // destructor
     __host__ ~Matrix()
     {
-        delete[] data;
+        HANDLE_ERROR(cudaFreeHost(data));
+        //delete[] data;
     }
 
     // check interaction
@@ -137,14 +142,15 @@ public:
 
     __host__ Matrix<T> *bootstrapMatrix( ) 
     {
-	
-        Matrix<T> *bsMatrix = new Matrix<T>(nRows,  nCols);
+        Matrix<T> *bsMatrix = new Matrix<T>(nRows, nCols);
 	int bsj; 
         for (int j = 0; j < nCols; ++j ){
-	    bsj = (rand() % (int)(nCols - 1));
+	    bsj = rand() % (int)nCols;
 	    for (int i = 0; i < nRows; i++){
 		// generate random indexs with replicates
-                bsMatrix->setValue( i, j, data[ i * nCols + bsj ] );
+                // bsMatrix->setValue( i, j, data[ i * nCols + bsj ] );
+                // direct handle mem address more efficient
+                bsMatrix->data[i * nCols + j] = data[i * nCols + bsj];
             }
         }
         return bsMatrix;
