@@ -1,8 +1,10 @@
-#ifndef PRUNEGRAPH_H
-#define PRUNEGRAPH_H
+#ifndef SUMBOOSTSTRAPGRAPHS_H
+#define SUMBOOSTSTRAPGRAPHS_H
 #include <cuda.h>
+#include <random>
 #include "util.hpp"
 
+#define POISSONCUT 0.05
 // the caller launches 2000 * 2000 * 20000 threads
 // the kernel is implemented here
 // first dimension: TF1
@@ -12,61 +14,94 @@
 
 
 template<typename T>
-__host__
-void matTo3cols(T *graphMiMat, *graphCountMat, unsigned int nRows, unsigned int nCols, T cutValue )
-{
-    T tfidx[];
-    T geneidx[];
-    T mi[];
-    T count[];
-    for (int i = 0; i < nRows; ++i )
-    {
-      for (int j = 0; i< nCols; ++j )
-      {
-	id = i * nCols + j;
-	mi = graphMat[ i * nCols + j ];
-	if( mi > cutValue )
-	{
-	  outGraph[i * 4 ] = {i ,j , mi, graphCountMat [id] };
-	} 
-      }
-    }
-    // 
-}
-
-template<typename T>
 __global__
-void sumBooststrapGraphs(T *d_sumMiGraph, *d_sumCountGraph, *d_currGraph, unsigned int nRows, unsigned int nCols, bool *d_decision)
+void sumBooststrapGraphs(T *d_sumMiGraph, int *d_sumCountGraph, T *d_currGraph, unsigned int nRows, unsigned int nCols)
 {
+  // sum the bootstrapping mi value, and edge information 
     unsigned int rowIdx = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int colIdx = blockIdx.y * blockDim.y + threadIdx.y;
     if (rowIdx >= nRows || colIdx >= nCols) return;
-    if (d_decision[rowIdx * nCols + colIdx])
+    if (!d_currGraph[rowIdx * nCols + colIdx] < 0)
     { 
         d_sumCountGraph[rowIdx * nCols + colIdx] += 1;
         d_sumMiGraph[rowIdx * nCols + colIdx] += d_currGraph[rowIdx * nCols + colIdx];
     }
 }
 
+__global__
+void calMean4Poisson( T *d_sumMiGraph, T *d_sumCountGraph, unsigned int nRows, unsigned int nCols, long totalEdges, long totalOccurence)
+{
+  // to get mean mi for each edge, average edges of all bootstraping
+  // call after all bootstraps finished 
+    unsigned int rowIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int colIdx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (rowIdx >= nRows || colIdx >= nCols) return;
+
+    long matIdx = rowIdx * nCols + colIdx ;
+    if (!d_currGraph[ matIdx ] < 0)
+    { 
+        d_sumMiGraph[ matIdx ] = d_sumMiGraph[ matIdx ] / d_sumCountGraph[ matIdx ];
+        atomicAdd(totalOccurence, d_sumCountGraph[ matIdx ] ); //TODO: think of better ways to to this ;
+        atomicAdd(totalEdge, 1 );
+    }
+
+}
+
 template<typename T>
 __host__
-void graphMatrixTo3cols(T *d_rawGraph, unsigned int nRows, unsigned int nCols, unsigned int *d_TFGeneIdx)
+void poissonIntegrate(T *bsMiGraph, int *bsCountGraph, long totalOccurence, long totalEdges,  unsigned int nRows, unsigned int nCols, Matrix<string> *TFList, Matrix<string> *geneLabels, float *outMi, float *poissonPvalue)
 {
-    bool *d_graph3cols;
-    HANDLE_ERROR(cudaMalloc((void **)&d_graph3cols, sizeof(float) * nRows * nCols )); // TODO need to calculate the size 
-    // set memory to -1 initializes all values to true
-    dim3 bDim(8, 8, 16);
-    dim3 gDim(ceil(nRows /(1.0 * bDim.x )), ceil(nRows /(1.0 * bDim.y)), ceil(nCols /(1.0 * bDim.z) ));
-    float cutValue = 0.0;
-    matTo3cols_d <<< gDim, bDim >>>(d_rawGraph, nRows, nCols, cutValue );
+   // host function used to calculate poisson model for 100 bootstraps  
+   // default poisson pvalue set to 0.05
+  
+   // init poisson cdf library;
+   float meanEdges = totalOccurence / ( 1.0 * totalEdges );
+   map <int, float > *pcdf;
+   poissonLibrary( meanEdges, totalOccurence, &pcdf);
 
-    HANDLE_ERROR(cudaGetLastError());
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    dim3 blockDimCut(16, 64, 1);
-    dim3 gridDimCut(ceil(nRows / 16.0), ceil(nCols / 64.0), 1);
-    cut<<<gridDimCut, blockDimCut>>>(d_rawGraph, nRows, nCols, d_decision);
-    HANDLE_ERROR(cudaGetLastError());
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    cudaFree(d_decision);
+   float mi; int id; long tempOccurence; 
+   printf("TF\tGene\tMI\tpoissonPvalue\n");
+   for (int i = 0; i < nRows; ++i )
+   {
+     for (int j = 0; i< nCols; ++j )
+     {
+       id = i * nCols + j;
+       mi = bsMiGraph->element(i , j );
+       if( mi > POISSONCUT )
+       { 
+         tempOccurence = bsCountGraph->element( i, j ) ; 
+         printf("%s\t%s\t%f\t%f\n", TFList->element(i,0) ,geneLabels->element(j,0) , mi, pcdf.find(tempOccurence)->second  );
+       } 
+     }
+   }
+   printf("\n### ----------  YEAH ----------- #####\n");
+   printf("### ---- YOU REACH THE END ----- #####\n");
+   printf("### --------- GO TO BED -------- #####\n");
 }
+
+__host__ 
+void poissonLibrary ( float mean, long totalOccurence, map <int, float> *pcdf ) 
+{
+  // generate a library of poisson mean <-> P(X > k) probability  mapping 
+  // return a map object, used as pcdf.find(X)->second to get a float p-value
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::poisson_distribution<> d( mean );
+    std::map<int, int> hist;
+    for( int n = 0; n < totalOccurence + 1; ++n ) 
+    {
+      ++hist[d(gen)];
+    }
+
+    float temp;
+    for (int i = 0; i < hist.size(); i++){
+      for ( int j = 0; j <= i; j++) 
+      {
+	temp += hist.find(i)->second;
+      }
+      pcdf[i] = 1 - temp / (1.0 * totalOccurence);
+    }
+}
+
 #endif
