@@ -1,5 +1,5 @@
 // basic viable unit of execution.
-#define TEST
+//#define TEST
 #include "InputOutput.hpp"
 #include "Matrix.hpp"
 #include "pruneGraph.hpp"
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array 
     float *d_miValue;
-    miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, (float)0.12);
+    miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, miThreshold);
 
 #ifdef TEST
     Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
@@ -85,14 +85,19 @@ int main(int argc, char *argv[])
     // DPI to prune network
     pruneGraph(d_miValue, nTFs, nGenes, d_TFGeneIdx);
 
-#ifdef TEST
-    Matrix<float> *h_miValue_pruned = new Matrix<float>(nTFs, nGenes);
-    cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
-    HANDLE_ERROR(cudaDeviceSynchronize());
-    h_miValue_pruned->print();
-    delete h_miValue_pruned;
-#endif
     // output data
+    Matrix<float> *h_miValue_pruned = new Matrix<float>(nTFs, nGenes);
+    cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)d_miValue, h_miValue_pruned->size(), cudaMemcpyDeviceToHost);
+    HANDLE_ERROR(cudaDeviceSynchronize());
+    //h_miValue_pruned->print();
+    for (int i = 0; i < nTFs; i++){
+        for (int j = 0; j < nGenes; j++){
+            if (h_miValue_pruned->element(i, j) > 0)
+                std::cout << TFList[i] << " " << geneLabels[j] << " " 
+                    << h_miValue_pruned->element(i, j) << std::endl;
+        }
+    }
+    delete h_miValue_pruned;
 
     // cleanup
     cudaFree(d_rankMat);

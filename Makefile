@@ -23,7 +23,8 @@ tester:
 	$(CC) $(CFLAGS) test/tester.cu  $(INC) $(LIB) -o bin/tester
 jTester:
 	$(CC) $(CFLAGS) test/jingTester.cu  $(INC) $(LIB) -o bin/jingTester
-
+unitTester: 
+	$(CC) $(CFLAGS) test/unitTest_DPI.cu  $(INC) $(LIB) -o bin/unitTester
 clean:
 	  @echo " Cleaning..."; 
 	    @echo " $(RM) -r $(BUILDDIR) $(TARGET) src/*~"; $(RM) -r $(BUILDDIR) $(TARGET) src/*~ *~
