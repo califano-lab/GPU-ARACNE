@@ -2,14 +2,28 @@
 #define BOOTSTRAPCONTAINER_HPP
 #include "util.hpp"
 #include <cuda.h>
+#include <thrust/reduce.h>
+#include <thrust/device_ptr.h>
+#include <thrust/plus.h>
+#include <cmath>
 
 __global__
-void aggregate(float *d_miContainer, unsigned int *d_miCounter, float *d_miValue, unsigned int nTFs, unsigned int nGenes)
+void aggregate(float *d_miContainer, unsigned int *d_countContainer, 
+        float *d_miValue, unsigned int nTFs, unsigned int nGenes)
 {
     unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= nTFs * nGenes) return;
     atomicAdd(d_miContainer + idx, d_miValue[idx]);
-    atomicAdd(&d_counterContainer + idx, 1);
+    atomicAdd(&d_countContainer + idx, 1);
+}
+
+__global__
+void filter(float *d_miContainer, unsigned int *d_countContainer, 
+        int threshold, unsigned int nTFs, unsigned int nGenes)
+{
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= nTFs * nGenes) return;
+    d_miContainer[idx] = (d_miContainer[idx] / d_countContainer[idx]) * (d_countContainer[idx] >= threshold);
 }
 
 class BootstrapContainer
@@ -33,7 +47,7 @@ public:
     {
         dim3 blockDim(1024, 1, 1);
         dim3 gridDim(ceil(nTFs * nGenes / 1024.0), 1, 1);
-        aggregate<<<gridDim, blockDim>>>(d_miContainer, d_miCounter, d_miValue, nTFs, nGenes);
+        aggregate<<<gridDim, blockDim>>>(d_miContainer, d_countCounter, d_miValue, nTFs, nGenes);
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());
     }
@@ -43,12 +57,36 @@ public:
         return d_miContainer;
     }
 
-    void condenseGraph(float lambda)
+    void condenseGraph(float pValue)
     {
-        // ask Jing
         // this function uses the count matrix and Poisson distribution to determine the final edges
         // the final result is saved back to d_miContainer
-        // TODO
+        // thrust to reduce (compute sum)
+        thrust::device_ptr<unsigned int> w_countContainer (d_countContainer);
+        int totalCount = thrust::reduce(w_countContainer, w_countContainer + nTFs * nGenes, 
+                (unsigned int)0, thrust::plus<unsigned int>());
+        // compute the average count of the graph, which is also called lambda
+        float lambda = (float)totalCount / (float)(nTFs * nGenes); 
+        
+        // let's hard code Poisson equation
+        float currentTerm = 1 / exp(lambda);
+        float cd = currentTerm; // cumulative density (just one value not a function)
+        int k = 0;
+        for (k = 1; i < totalCount; i++){
+            if (cd > 1.0 - pValue){
+                break;
+            } else {
+                currentTerm = currentTerm * lambda / k;
+                cd += currentTerm;
+            }
+        }
+
+        // apply threshold k
+        dim3 blockDim(1024, 1, 1);
+        dim3 gridDim(ceil(nTFs * nGenes / 1024.0), 1, 1);
+        filter<<<gridDim, blockDim>>>(d_miContainer, d_countCounter, k, nTFs, nGenes);
+        HANDLE_ERROR(cudaGetLastError());
+        HANDLE_ERROR(cudaDeviceSynchronize());
     }
 
 private:

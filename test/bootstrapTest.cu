@@ -8,6 +8,8 @@
 #include "BootstrapContainer.hpp"
 #include <cstdlib>
 #include <cstdio>
+#define POISSON_P_VALUE 0.05
+#define SMALL_LIMIT 0.00001
 
 int main(int argc, char *argv[])
 {
@@ -113,7 +115,7 @@ int main(int argc, char *argv[])
     
     std::cerr << "### Condensing Graph ###" << std::endl;
     // condense the graph based on Poisson distribution
-    bContainer.condenseGraph();
+    bContainer.condenseGraph(POISSON_P_VALUE);
 
     // delete the original data matrix after bootstrapping 
     delete dataMat;
@@ -126,7 +128,7 @@ int main(int argc, char *argv[])
     HANDLE_ERROR(cudaDeviceSynchronize());
     for (int i = 0; i < nTFs; i++){
         for (int j = 0; j < nGenes; j++){
-            if (h_miValue_final->element(i, j) > 0)
+            if (h_miValue_final->element(i, j) > SMALL_LIMIT)
                 std::cout << TFList[i] << " " << geneLabels[j] << " " 
                     << h_miValue_final->element(i, j) << std::endl;
         }
