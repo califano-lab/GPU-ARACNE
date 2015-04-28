@@ -51,8 +51,8 @@ public:
     {
         nRows = size;
         nCols = size;
-        //HANDLE_ERROR(cudaHostAlloc((void **)&data, size * size * sizeof(T), 0));
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, size * size * sizeof(T), 0));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = (T)INIT_VALUE;
@@ -75,8 +75,8 @@ public:
     {
         nRows = m;
         nCols = n;
-        //HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = (T)INIT_VALUE;
@@ -89,8 +89,8 @@ public:
     {
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        //HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = rhs.data[i * nCols + j];
@@ -105,8 +105,8 @@ public:
         HANDLE_ERROR(cudaFreeHost(data));
         nRows = rhs.nRows;
         nCols = rhs.nCols;
-        //HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
-        data = new T[nRows * nCols];
+        HANDLE_ERROR(cudaHostAlloc((void **)&data, nRows * nCols * sizeof(T), cudaHostAllocDefault));
+        //data = new T[nRows * nCols];
         for (int i = 0; i < nRows; i++){
             for (int j = 0; j < nCols; j++){
                 data[i * nCols + j] = rhs.data[i * nCols + j];
@@ -118,8 +118,8 @@ public:
     // destructor
     __host__ ~Matrix()
     {
-        //HANDLE_ERROR(cudaFreeHost(data));
-        delete[] data;
+        HANDLE_ERROR(cudaFreeHost(data));
+        //delete[] data;
     }
 
     // check interaction

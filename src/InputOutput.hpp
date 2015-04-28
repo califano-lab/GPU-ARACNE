@@ -58,14 +58,9 @@ void createMapping(unsigned int **d_TFGeneIdx, vector<string> *TFList,
     for (unsigned int i = 0; i < nTFs; i++){
         h_TFGeneIdx[i] = genePool[(*TFList)[i]];
     }
-#ifdef TEST
-    for (int i = 0; i < nTFs; i++){
-        cout << h_TFGeneIdx[i] << endl;
-    }
-#endif
-    delete[] h_TFGeneIdx;
     HANDLE_ERROR (cudaMalloc((void **)d_TFGeneIdx, sizeof(unsigned int) * nTFs));
     HANDLE_ERROR (cudaMemcpy((void *)*d_TFGeneIdx, h_TFGeneIdx, sizeof(unsigned int) *nTFs, cudaMemcpyHostToDevice));
     HANDLE_ERROR (cudaDeviceSynchronize());
+    delete[] h_TFGeneIdx;
 }
 #endif

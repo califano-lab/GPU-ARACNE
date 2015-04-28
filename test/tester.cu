@@ -50,6 +50,12 @@ int main(int argc, char *argv[])
     cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
     h_ranked->print();
     delete h_ranked;
+    unsigned int *h_TFGeneIdx = new unsigned int [nTFs];
+    cudaMemcpy((void *)h_TFGeneIdx, (void *)d_TFGeneIdx, sizeof(unsigned int) * nTFs, cudaMemcpyDeviceToHost);
+    std::cout << "TFGenesIdx: " << std::endl;
+    for (int i = 0; i < nTFs; i++){
+        std::cout<< h_TFGeneIdx[i] << std::endl;
+    }
 #endif    
     delete dataMat;
 
@@ -58,15 +64,15 @@ int main(int argc, char *argv[])
     // this array is already in the GPU
     
     unsigned int seed = 1;
-    //float miThreshold = computeMiThreshold(nSamples, pValue, seed);
-    float miThreshold = computeMiThreshold(1000, 0.00000001, seed);
+    float miThreshold = computeMiThreshold(nSamples, pValue, seed);
+//    float miThreshold = computeMiThreshold(1000, 0.00000001, seed);
 #ifdef TEST
     std::cout << miThreshold << std::endl;
 #endif
     // build network
     // the output of this part should be nTFs * nGenes matrix stored in a plain 1-D array 
     float *d_miValue;
-    miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, (float)0);
+    miAP(d_rankMat, nTFs, nGenes, nSamples, d_TFGeneIdx, &d_miValue, (float)0.12);
 
 #ifdef TEST
     Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);

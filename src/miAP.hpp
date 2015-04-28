@@ -73,44 +73,53 @@ void computeMi(unsigned int *d_rankMatrix, unsigned int nTFs, unsigned int nGene
         }
 */
         // optimize to reduce thread divergence
-        atomicAdd(&lowerLeft, cubeArray[head].left <= coordX & coordX < middleX & 
-                cubeArray[head].lower <= coordY & coordY < middleY);
-        atomicAdd(&upperLeft, cubeArray[head].left <= coordX & coordX < middleX & 
-                middleY <= coordY & coordY <= cubeArray[head].upper);
-        atomicAdd(&lowerRight, middleX <= coordX & coordX <= cubeArray[head].right &
-                cubeArray[head].lower <= coordY & coordY < middleY);
-        atomicAdd(&upperRight, middleX <= coordX & coordX <= cubeArray[head].right &
-                middleY <= coordY & coordY <= cubeArray[head].upper);
+        atomicAdd(&lowerLeft, cubeArray[head].left <= coordX & coordX <= middleX & 
+                cubeArray[head].lower <= coordY & coordY <= middleY);
+        atomicAdd(&upperLeft, cubeArray[head].left <= coordX & coordX <= middleX & 
+                middleY < coordY & coordY <= cubeArray[head].upper);
+        atomicAdd(&lowerRight, middleX < coordX & coordX <= cubeArray[head].right &
+                cubeArray[head].lower <= coordY & coordY <= middleY);
+        atomicAdd(&upperRight, middleX < coordX & coordX <= cubeArray[head].right &
+                middleY < coordY & coordY <= cubeArray[head].upper);
         __syncthreads();
-        
+/*        
+        if ((nSamples == (upperRight + upperLeft + lowerLeft + lowerRight)) && threadIdx.x == 0 && blockIdx.x == 0 && blockIdx.y ==0){
+            unsigned int row1 = d_TFGenesIdx[0];
+            unsigned int row2 = 0;
+            printf("comparing row1 = %u and row2 = %u\n", row1, row2);
+            printf("%u %u %u %u\n", upperRight, upperLeft, lowerLeft, lowerRight);
+        }
+*/
         if (chiSeq(nSamples, upperRight, upperLeft, lowerLeft, lowerRight)) {// significant
             cubeArray[tail].totalCount = upperRight;
             cubeArray[tail].upper = cubeArray[head].upper;
-            cubeArray[tail].lower = middleY;
-            cubeArray[tail].left = middleX;
+            cubeArray[tail].lower = middleY + 1;
+            cubeArray[tail].left = middleX + 1;
             cubeArray[tail].right = cubeArray[head].right;
             
             cubeArray[tail + 1].totalCount = upperLeft;
             cubeArray[tail + 1].upper = cubeArray[head].upper;
-            cubeArray[tail + 1].lower = middleY;
+            cubeArray[tail + 1].lower = middleY + 1;
             cubeArray[tail + 1].left = cubeArray[head].left;
-            cubeArray[tail + 1].right = middleX - 1;
+            cubeArray[tail + 1].right = middleX;
             
             cubeArray[tail + 2].totalCount = lowerLeft;
-            cubeArray[tail + 2].upper = middleY - 1;
+            cubeArray[tail + 2].upper = middleY;
             cubeArray[tail + 2].lower = cubeArray[head].lower;
             cubeArray[tail + 2].left = cubeArray[head].left;
-            cubeArray[tail + 2].right = middleX - 1;
+            cubeArray[tail + 2].right = middleX;
             
             cubeArray[tail + 3].totalCount = lowerRight;
-            cubeArray[tail + 3].upper = middleY - 1;
+            cubeArray[tail + 3].upper = middleY;
             cubeArray[tail + 3].lower = cubeArray[head].lower;
-            cubeArray[tail + 3].left = middleX;
+            cubeArray[tail + 3].left = middleX + 1;
             cubeArray[tail + 3].right = cubeArray[head].right;
             // no locking needed
             // head and tail on register        
             tail = tail + 4;
-            head = head + 1;            
+            head = head + 1;
+
+ //           printf("%u %u %u %u\n", upperRight, upperLeft, lowerLeft, lowerRight);
         } else {
             // compute the actual mutual information value here
             unsigned int countX = cubeArray[head].right - cubeArray[head].left + 1;
@@ -139,7 +148,6 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
     // need pick two rows 
     // first row (define it X): rowIdx
     // second row (define it Y): rowIdx * 2 
-    // see lines 146 147
     extern __shared__ Cube cubeArray[];
     unsigned int head = 0;
     unsigned int tail = 1;
@@ -168,16 +176,16 @@ void computeMi(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int n
         unsigned int coordY = d_randomMatrix[rowIdx * 2 * nSamples + colIdx];
         
         // optimize to reduce thread divergence
-        atomicAdd(&lowerLeft, cubeArray[head].left <= coordX & coordX < middleX & 
-                cubeArray[head].lower <= coordY & coordY < middleY);
-        atomicAdd(&upperLeft, cubeArray[head].left <= coordX & coordX < middleX & 
-                middleY <= coordY & coordY <= cubeArray[head].upper);
-        atomicAdd(&lowerRight, middleX <= coordX & coordX <= cubeArray[head].right &
-                cubeArray[head].lower <= coordY & coordY < middleY);
-        atomicAdd(&upperRight, middleX <= coordX & coordX <= cubeArray[head].right &
-                middleY <= coordY & coordY <= cubeArray[head].upper);
+        atomicAdd(&lowerLeft, cubeArray[head].left <= coordX & coordX <= middleX & 
+                cubeArray[head].lower <= coordY & coordY <= middleY);
+        atomicAdd(&upperLeft, cubeArray[head].left <= coordX & coordX <= middleX & 
+                middleY < coordY & coordY <= cubeArray[head].upper);
+        atomicAdd(&lowerRight, middleX < coordX & coordX <= cubeArray[head].right &
+                cubeArray[head].lower <= coordY & coordY <= middleY);
+        atomicAdd(&upperRight, middleX < coordX & coordX <= cubeArray[head].right &
+                middleY < coordY & coordY <= cubeArray[head].upper);
         __syncthreads();
-
+      
         if (chiSeq(nSamples, upperRight, upperLeft, lowerLeft, lowerRight)) {// significant
             cubeArray[tail].totalCount = upperRight;
             cubeArray[tail].upper = cubeArray[head].upper;
