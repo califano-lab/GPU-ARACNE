@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < geneLabels.size(); i++){
         std::cout << geneLabels[i] << std::endl;
     }
-    dataMat->printHead();
+    dataMat->print();
     unsigned int *h_TFGeneIdx = new unsigned int [nTFs];
     cudaMemcpy((void *)h_TFGeneIdx, (void *)d_TFGeneIdx, sizeof(unsigned int) * nTFs, cudaMemcpyDeviceToHost);
     std::cout << "TFGenesIdx: " << std::endl;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 #ifdef TEST
         Matrix<unsigned int> *h_ranked = new Matrix<unsigned int>(nGenes, nSamples);
         cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
-        h_ranked->printHead();
+        h_ranked->print();
         delete h_ranked;
 #endif  
         delete subsample;
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
         Matrix<float> *h_miValue = new Matrix<float>(nTFs, nGenes);
         cudaMemcpy((void *)h_miValue->memAddr(), (void *)d_miValue, h_miValue->size(), cudaMemcpyDeviceToHost);
         HANDLE_ERROR(cudaDeviceSynchronize());
-        h_miValue->printHead();
+        h_miValue->print();
         delete h_miValue;
 #endif
         HANDLE_ERROR(cudaFree(d_rankMat));
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
         Matrix<float> *h_miValue_pruned = new Matrix<float>(nTFs, nGenes);
         cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)d_miValue, h_miValue_pruned->size(), cudaMemcpyDeviceToHost);
         HANDLE_ERROR(cudaDeviceSynchronize());
-        h_miValue_pruned->printHead();
+        h_miValue_pruned->print();
         delete h_miValue_pruned;
 #endif
 
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     // output data
     std::cerr << "### Writing Output ###" << std::endl;
     Matrix<float> *h_miValue_final = new Matrix<float>(nTFs, nGenes);
-    cudaMemcpy((void *)h_miValue_pruned->memAddr(), (void *)bContainer.miValueMemAddr(), 
+    cudaMemcpy((void *)h_miValue_final->memAddr(), (void *)bContainer.miValueMemAddr(), 
             h_miValue_final->size(), cudaMemcpyDeviceToHost);
     HANDLE_ERROR(cudaDeviceSynchronize());
     for (int i = 0; i < nTFs; i++){

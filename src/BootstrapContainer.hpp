@@ -4,7 +4,6 @@
 #include <cuda.h>
 #include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
-#include <thrust/plus.h>
 #include <cmath>
 
 __global__
@@ -14,7 +13,7 @@ void aggregate(float *d_miContainer, unsigned int *d_countContainer,
     unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= nTFs * nGenes) return;
     atomicAdd(d_miContainer + idx, d_miValue[idx]);
-    atomicAdd(&d_countContainer + idx, 1);
+    atomicAdd(d_countContainer + idx, 1);
 }
 
 __global__
@@ -31,6 +30,8 @@ class BootstrapContainer
 public:
     BootstrapContainer(unsigned int nTFs, unsigned int nGenes)
     {
+        this->nTFs = nTFs;
+        this->nGenes = nGenes;
         HANDLE_ERROR(cudaMalloc((void **)&d_miContainer, sizeof(float) * nTFs * nGenes));
         HANDLE_ERROR(cudaMemset((void *)d_miContainer, (float)0, sizeof(float) * nTFs * nGenes));
         HANDLE_ERROR(cudaMalloc((void **)&d_countContainer, sizeof(unsigned int) * nTFs * nGenes));
@@ -47,7 +48,7 @@ public:
     {
         dim3 blockDim(1024, 1, 1);
         dim3 gridDim(ceil(nTFs * nGenes / 1024.0), 1, 1);
-        aggregate<<<gridDim, blockDim>>>(d_miContainer, d_countCounter, d_miValue, nTFs, nGenes);
+        aggregate<<<gridDim, blockDim>>>(d_miContainer, d_countContainer, d_miValue, nTFs, nGenes);
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());
     }
@@ -72,7 +73,7 @@ public:
         float currentTerm = 1 / exp(lambda);
         float cd = currentTerm; // cumulative density (just one value not a function)
         int k = 0;
-        for (k = 1; i < totalCount; i++){
+        for (k = 1; k < totalCount; k++){
             if (cd > 1.0 - pValue){
                 break;
             } else {
@@ -84,7 +85,7 @@ public:
         // apply threshold k
         dim3 blockDim(1024, 1, 1);
         dim3 gridDim(ceil(nTFs * nGenes / 1024.0), 1, 1);
-        filter<<<gridDim, blockDim>>>(d_miContainer, d_countCounter, k, nTFs, nGenes);
+        filter<<<gridDim, blockDim>>>(d_miContainer, d_countContainer, k, nTFs, nGenes);
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());
     }
@@ -94,6 +95,6 @@ private:
     unsigned int *d_countContainer;
     unsigned int nTFs;
     unsigned int nGenes;
-}
+};
 
 #endif
