@@ -1,3 +1,9 @@
+## Usage
+
+From the root directoy, just type make. The executable will be located in bin folder with name runner. 
+
+The application requires the CUDA compiler nvcc with device architecture of 3.5 capability. Thrust library is also required. 
+
 ## Data input
 
 Input is via pure file stream read. 1.3 sec to load a 20000 * 256 matrix. 
@@ -24,6 +30,8 @@ Kernel with thread dimension of nGenes * nGenes * nSamples is launched. Each pai
 
 4 additional values are kept in the shared memory for counting purpose. Counting is carried out using hard-coded bit operation. Also repeated overwrite of the same data is allowed to reduce thread divergence. 
 
+Because the queue data structure is in shared memory, a careful calculation of its upper bound is essential for parallel execution. The theoretical upper bound is (nSamples - 3) items in the queue. 
+
 ## Data processing inequality
 
 Here it expects an input of matrix with size of nTFs * nTFs * nGenes.
@@ -34,20 +42,27 @@ One more thing to think of: if during DPI, two edges are equally small, which on
 
 Another note: interaction with itself is not taken care of, aka. the degenerated triangle is left without special consideration to reduce thread divergence. 
 
-So far, the whole process from null model construction and data processing inequality takes around 3 minutes (including around 600 MB disk IO) with sample size of 200, gene number of 20000. Note that the Java multithread version running on 32 core computing cluster takes around 9 min (including disk IO). 
-
 ## Bootstrapping
 
-random sample the same number of columns from the original data, ship it to device
+Random sample the same number of columns from the original data, ship it to device.
 
-2 additional matrix on device, one for the sum of all MIs for each bootstrap, and the other for counts of occurence this edge among all bootstraps
+2 additional matrix initialized on device, one for the sum of all MIs for each bootstrap, and the other for counts of occurence this edge among all bootstraps.
 
-overall edges and occurence were calculated on device
+Overall edges and occurence were calculated on device: using parallel reduce with thrust library. 
 
-the 2 bootstrap matrix along with the total edges and occurence are shipped back to host
+The 2 bootstrap matrix along with the total edges and occurence are shipped back to host
 
-poisson model is generated with mean edge calculated from total occurence / total edge, and for each edge, the p-value was calculated based on the occurence of this edge
+Poisson model is generated with mean edge calculated from total occurence / total edge, and for each edge, the p-value was calculated based on the occurence of this edge
 
-for each edge, if possion pvalue is less then 0.05(bonferroni corrected), then tf, gene, meanMI, and poisson pvalue were be write out. 
+For each edge, if possion pvalue is less then 0.05(bonferroni corrected), then tf, gene, meanMI, and poisson pvalue were be write out. 
 
 Output: 4 column text file 
+
+## Current performance
+
+For 255 samples, 20531 genes, and 1813 transcription factors. The time taken (including IO) is 1 min 44 sec. 
+
+For 127 samples, 20531 genes, and 1813 transcription factors. The time taken is 56 sec. 
+
+Comparing to the multithreadded Java version running on CPU which takes around 9 minutes to execute 200 samples. 
+

@@ -19,7 +19,12 @@ int main(int argc, char *argv[])
     // import transcription factor list
     std::vector<std::string> TFList(nTFs);
     loadMatrix(NULL, &TFList, TFFilename, nTFs, 1);
-    
+#ifdef TEST    
+    for (int i = 0; i < TFList.size(); i++){
+        std::cout << TFList[i] << std::endl;
+    }
+#endif
+
     // import data
     Matrix<float> *dataMat;
     std::vector<std::string> geneLabels(nGenes);
@@ -31,9 +36,6 @@ int main(int argc, char *argv[])
     createMapping(&d_TFGeneIdx, &TFList, &geneLabels, nTFs, nGenes);
     std::cerr << "### Mapping Created ###" << std::endl;
 #ifdef TEST
-    for (int i = 0; i < TFList.size(); i++){
-        std::cout << TFList[i] << std::endl;
-    }
     for (int i = 0; i < geneLabels.size(); i++){
         std::cout << geneLabels[i] << std::endl;
     }

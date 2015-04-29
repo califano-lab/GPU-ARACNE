@@ -211,7 +211,8 @@ void miAP(unsigned int *d_rankMatrix, unsigned int nTFs, unsigned int nGenes, un
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_rawGraph, sizeof(float) * nTFs * nGenes) );
-    computeMi<<<gridDim, blockDim, 24000>>>(d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph, miThreshold);
+    computeMi<<<gridDim, blockDim, nSamples * sizeof(Cube)>>>
+        (d_rankMatrix, nTFs, nGenes, nSamples, d_TFGeneIdx, *d_rawGraph, miThreshold);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }
@@ -227,7 +228,7 @@ void miAP(unsigned int *d_randomMatrix, unsigned int nPairs, unsigned int nSampl
     dim3 blockDim(nSamples, 1, 1);
 
     HANDLE_ERROR( cudaMalloc((void **)d_miResult, sizeof(float) * nPairs) );
-    computeMi<<<gridDim, blockDim, 24000>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
+    computeMi<<<gridDim, blockDim, nSamples * sizeof(Cube)>>>(d_randomMatrix, nPairs, nSamples, *d_miResult);
     HANDLE_ERROR( cudaGetLastError() );
     HANDLE_ERROR( cudaDeviceSynchronize() );
 }

@@ -6,7 +6,6 @@ void loadMatrix(Matrix<float> **mat, vector<string> *geneLabels,
 {
     if (mat != NULL)
         *mat = new Matrix<float>(nRows, nCols);
-    //geneLabels = new vector<string>(nRows);
     ifstream fs;
     fs.open(filename);
     if (!fs.is_open()) {
