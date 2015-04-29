@@ -12,8 +12,8 @@ void aggregate(float *d_miContainer, unsigned int *d_countContainer,
 {
     unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= nTFs * nGenes) return;
-    atomicAdd(d_miContainer + idx, d_miValue[idx]);
-    atomicAdd(d_countContainer + idx, 1);
+    atomicAdd(d_miContainer + idx, d_miValue[idx] * (d_miValue[idx] > 0));
+    atomicAdd(d_countContainer + idx, 1 * (d_miValue[idx] > 0));
 }
 
 __global__
@@ -68,7 +68,6 @@ public:
                 (unsigned int)0, thrust::plus<unsigned int>());
         // compute the average count of the graph, which is also called lambda
         float lambda = (float)totalCount / (float)(nTFs * nGenes); 
-        
         // let's hard code Poisson equation
         float currentTerm = 1 / exp(lambda);
         float cd = currentTerm; // cumulative density (just one value not a function)

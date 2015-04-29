@@ -1,13 +1,4 @@
-#include "InputOutput.hpp"
-#include "Matrix.hpp"
-#include "pruneGraph.hpp"
-#include "miAP.hpp"
-#include "genMiCutoff.hpp"
-#include "BootstrapContainer.hpp"
-#include <cstdlib>
-#include <cstdio>
-#define POISSON_P_VALUE 0.05
-#define SMALL_LIMIT 0.00001
+#include "aracne.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -113,7 +104,10 @@ int main(int argc, char *argv[])
     
     std::cerr << "### Condensing Graph ###" << std::endl;
     // condense the graph based on Poisson distribution
-    bContainer.condenseGraph(POISSON_P_VALUE);
+    if (nBootstraps == 1)
+        std::cerr << "!!! Tow few rounds of bootstrap. Skipped !!!" << std::endl;
+    else
+        bContainer.condenseGraph(POISSON_P_VALUE);
 
     // delete the original data matrix after bootstrapping 
     delete dataMat;
