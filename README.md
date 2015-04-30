@@ -4,6 +4,8 @@ From the root directoy, just type make. The executable will be located in bin fo
 
 The application requires the CUDA compiler nvcc with device architecture of 3.5 capability. Thrust library is also required. 
 
+The .cu files are in the /src folder and all the header files are located in /include directory. When compiling a build directory will be automatically created and the exectubale is located in /bin. 
+
 To execute the program:
  
 ```
@@ -46,8 +48,6 @@ Because the queue data structure is in shared memory, a careful calculation of i
 Here it expects an input of matrix with size of nTFs * nTFs * nGenes.
 
 nTFs * nTFs * nGenes threads will be launched to prune  the graph. The result is saved in a boolean matrix mask and later applied using nTFs * nGenes threads. 
-
-One more thing to think of: if during DPI, two edges are equally small, which one should we cut?
 
 Another note: interaction with itself is not taken care of, aka. the degenerated triangle is left without special consideration to reduce thread divergence. 
 

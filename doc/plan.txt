@@ -1,4 +1,0 @@
-All parameters should be passed to GPU once as constants. 
-
-Split array of constructs to arrays of fields of constructs. 
-
