@@ -142,6 +142,7 @@ public:
 
     __host__ Matrix<T> *bootstrapMatrix( ) 
     {
+        srand(time(NULL));
         Matrix<T> *bsMatrix = new Matrix<T>(nRows, nCols);
 	int bsj; 
         for (int j = 0; j < nCols; ++j ){

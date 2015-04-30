@@ -105,7 +105,8 @@ void computeMi(unsigned int *d_rankMatrix, unsigned int nTFs, unsigned int nGene
         }
         __syncthreads();
     } while(head < tail);
-    d_rawGraph[TFIdx * nGenes + geneIdx] = miValue / nSamples + log((float)nSamples)  - miThreshold; 
+    d_rawGraph[TFIdx * nGenes + geneIdx] = 
+        (miValue / nSamples + log((float)nSamples)  > miThreshold) * (miValue / nSamples + log((float)nSamples)); 
 }
 
 // called by null model miAP()

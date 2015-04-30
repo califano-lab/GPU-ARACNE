@@ -5,15 +5,15 @@
 #include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
 #include <cmath>
-
+#define LIMIT 0.00001
 __global__
 void aggregate(float *d_miContainer, unsigned int *d_countContainer, 
         float *d_miValue, unsigned int nTFs, unsigned int nGenes)
 {
     unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= nTFs * nGenes) return;
-    atomicAdd(d_miContainer + idx, d_miValue[idx] * (d_miValue[idx] > 0));
-    atomicAdd(d_countContainer + idx, 1 * (d_miValue[idx] > 0));
+    atomicAdd(d_miContainer + idx, d_miValue[idx] * (d_miValue[idx] > LIMIT));
+    atomicAdd(d_countContainer + idx, 1 * (d_miValue[idx] > LIMIT));
 }
 
 __global__
@@ -68,6 +68,7 @@ public:
                 (unsigned int)0, thrust::plus<unsigned int>());
         // compute the average count of the graph, which is also called lambda
         float lambda = (float)totalCount / (float)(nTFs * nGenes); 
+std::cerr << "lambda = " << lambda << std::endl;
         // let's hard code Poisson equation
         float currentTerm = 1 / exp(lambda);
         float cd = currentTerm; // cumulative density (just one value not a function)
@@ -76,11 +77,11 @@ public:
             if (cd > 1.0 - pValue){
                 break;
             } else {
-                currentTerm = currentTerm * lambda / k;
+                currentTerm = currentTerm * lambda / (float)k;
                 cd += currentTerm;
             }
         }
-
+std::cerr << "Poisson threshold k = " << k << std::endl;
         // apply threshold k
         dim3 blockDim(1024, 1, 1);
         dim3 gridDim(ceil(nTFs * nGenes / 1024.0), 1, 1);
