@@ -4,6 +4,15 @@ From the root directoy, just type make. The executable will be located in bin fo
 
 The application requires the CUDA compiler nvcc with device architecture of 3.5 capability. Thrust library is also required. 
 
+To execute the program:
+ 
+```
+#./bin/runner <TFFile> <PatientDataFile> <nTFs> <nGenes> <nSamples> <nBootstraps> <pValue>  > outputFile
+./bin/runner data/tfs data/input_expmat_512_clean.txt 1813 20531 512 1 0.0000001 > data/result_3_col_512.txt
+```
+
+The data files are not included in the git repo. 
+
 ## Data input
 
 Input is via pure file stream read. 1.3 sec to load a 20000 * 256 matrix. 
@@ -56,13 +65,11 @@ Poisson model is generated with mean edge calculated from total occurence / tota
 
 For each edge, if possion pvalue is less then 0.05(bonferroni corrected), then tf, gene, meanMI, and poisson pvalue were be write out. 
 
-Output: 4 column text file 
+Output: 3 column text file 
 
 ## Current performance
 
-For 255 samples, 20531 genes, and 1813 transcription factors. The time taken (including IO) is 1 min 44 sec. 
+For 200 samples, 20531 genes, and 1813 transcription factors. The time taken (including IO) is 64 sec. 
 
-For 127 samples, 20531 genes, and 1813 transcription factors. The time taken is 56 sec. 
-
-Comparing to the multithreadded Java version running on CPU which takes around 9 minutes to execute 200 samples. 
+Comparing to the multithreadded Java version running on CPU which takes around 192 sec (4 core) and 649 sec (1 core) to execute 200 samples. 
 
