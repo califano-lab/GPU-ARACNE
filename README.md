@@ -13,7 +13,11 @@ To execute the program:
 ./bin/runner data/tfs data/input_expmat_512_clean.txt 1813 20531 512 1 0.0000001 > data/result_3_col_512.txt
 ```
 
-The data files are not included in the git repo. 
+The data files are not included in the git repo, but is available through download. 
+
+PatienDataFile: https://www.dropbox.com/s/42wg6imiu3efl30/brca-expmat-512-clean.csv?dl=0
+
+TFFile: https://www.dropbox.com/s/b36h2nf1j9fhmgy/tfs.txt?dl=0
 
 ## Data input
 
