@@ -29,10 +29,28 @@ __global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols, 
         helperArray[i] = i;
     }
 
+    // rank elements in each row
+    /*
+     * this chunk of code can replace the next chunk of code the system support CUDA dynamic parallelism
     thrust::stable_sort_by_key(thrust::seq, d_data+tabIdx*nCols, d_data+tabIdx*nCols + nCols, helperArray);
+    */
+
+    for (int i = 0; i < nCols-1; i++){
+        for (int j = i+1; j < nCols; j++) {
+            if (*(d_data+tabIdx*nCols+i) > *(d_data+tabIdx*nCols+j)) {
+                int temp = *(d_data+tabIdx*nCols+i);
+    		*(d_data+tabIdx*nCols+i) = *(d_data+tabIdx*nCols+j);
+		*(d_data+tabIdx*nCols+j) = temp;
+                temp = helperArray[i];
+                helperArray[i] = helperArray[j];
+                helperArray[j] = temp;
+	    }
+	}
+    }
     for (int i = 0; i < nCols; i++){
         d_rank[tabIdx * nCols + helperArray[i]] = i;
     }
+
     delete[] helperArray;
 }
 

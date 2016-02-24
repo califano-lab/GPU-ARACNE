@@ -8,7 +8,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g #-Xcompiler "-std=c++0x" -g  
 LIB := 
-INC := -I src -I include -arch=sm_35
+INC := -I src -I include -arch=sm_30
 
 $(TARGET): $(OBJECTS)
 	  @echo " Linking..."
