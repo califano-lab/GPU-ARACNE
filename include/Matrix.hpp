@@ -19,10 +19,10 @@
 //matrix implemented in 1-D array
 
 template <typename T>
-__global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols, unsigned int *d_rank)
+__global__ void rankRow(T *d_data, unsigned int nRows, unsigned int nCols, unsigned int *d_rank)
 {
-    unsigned int tabIdx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (tabIdx >= tabletSize) return;
+    unsigned int rowIdx = blockDim.x * blockIdx.x + threadIdx.x;
+    if (rowIdx >= nRows) return;
     // this is slow, think to optimize
     unsigned int *helperArray = new unsigned int[nCols];
     for (int i = 0; i < nCols; i++){
@@ -34,21 +34,22 @@ __global__ void rankRow(T *d_data, unsigned int tabletSize, unsigned int nCols, 
      * this chunk of code can replace the next chunk of code the system support CUDA dynamic parallelism
     thrust::stable_sort_by_key(thrust::seq, d_data+tabIdx*nCols, d_data+tabIdx*nCols + nCols, helperArray);
     */
-
-    for (int i = 0; i < nCols-1; i++){
-        for (int j = i+1; j < nCols; j++) {
-            if (*(d_data+tabIdx*nCols+i) > *(d_data+tabIdx*nCols+j)) {
-                int temp = *(d_data+tabIdx*nCols+i);
-    		*(d_data+tabIdx*nCols+i) = *(d_data+tabIdx*nCols+j);
-		*(d_data+tabIdx*nCols+j) = temp;
-                temp = helperArray[i];
-                helperArray[i] = helperArray[j];
-                helperArray[j] = temp;
+    T temp = 0.0;
+    int tIndex = 0;
+    for (unsigned int i = rowIdx*nCols; i < rowIdx*nCols+nCols-1; i++){
+        for (unsigned int j = i+1; j < rowIdx*nCols+nCols; j++) {
+            if ((T)d_data[i] < (T)d_data[j]) {
+                temp = d_data[i];
+    		d_data[i] = d_data[j];
+		d_data[j] = temp;
+                tIndex = helperArray[i-rowIdx*nCols];
+                helperArray[i-rowIdx*nCols] = helperArray[j-rowIdx*nCols];
+                helperArray[j-rowIdx*nCols] = tIndex;
 	    }
 	}
     }
-    for (int i = 0; i < nCols; i++){
-        d_rank[tabIdx * nCols + helperArray[i]] = i;
+    for (unsigned int i = 0; i < nCols; i++){
+        d_rank[rowIdx * nCols + helperArray[i]] = i;
     }
 
     delete[] helperArray;
@@ -206,24 +207,12 @@ public:
         HANDLE_ERROR(cudaMemcpy((void *)d_data, (void *)data, size(), cudaMemcpyHostToDevice));
         unsigned int *d_rank;
         cudaMalloc((void **)&d_rank, nRows * nCols * sizeof(int));
-        unsigned int tabletSize = 128;
-        unsigned int nRows_cpy = nRows;
-        unsigned int realTabletSize; 
-        for (int i = 0; i < ceil(nRows / (1.0*tabletSize)); i++){
-            if (nRows_cpy >= tabletSize){
-                realTabletSize = tabletSize;
-                nRows_cpy = nRows_cpy - tabletSize;
-            } else {
-                realTabletSize = nRows_cpy;
-            }
 
-            dim3 threadsPerBlock(128, 1, 1);
-            dim3 blocksPerGrid((unsigned int)ceil(realTabletSize/(1.0 * 128)), 1, 1);
-            rankRow<<<blocksPerGrid, threadsPerBlock>>>
-                (d_data + i * tabletSize * nCols, realTabletSize, nCols, d_rank + i * tabletSize * nCols);
-            HANDLE_ERROR(cudaGetLastError());
-            HANDLE_ERROR(cudaDeviceSynchronize());
-        }
+        dim3 threadsPerBlock(32, 1, 1);
+        dim3 blocksPerGrid((unsigned int)ceil(nRows/(1.0 * 32)), 1, 1);
+        rankRow<<<blocksPerGrid, threadsPerBlock>>>(d_data, nRows, nCols, d_rank);
+        HANDLE_ERROR(cudaGetLastError());
+	HANDLE_ERROR(cudaDeviceSynchronize());
         HANDLE_ERROR(cudaFree(d_data));
         return d_rank;
     }

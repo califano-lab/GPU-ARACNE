@@ -8,6 +8,6 @@ nSamples=` awk -F, 'NR==1{print NF-1}' $expfile `
 nBootstraps=1
 pValue=0.0000001
 echo " Usage: ./bin/tester <tffile> <datafile> <ntfs> <ngenes> <nSamples> <nBootstraps> <pValue>"
-cmd="$PWD/bin/tester  $tffile $expfile $ntfs $ngenes $nSamples $nBootstraps $pValue"
+cmd="$PWD/bin/runner  $tffile $expfile $ntfs $ngenes $nSamples $nBootstraps $pValue"
 echo $cmd
 $cmd > $PWD/data/Result_test_200.txt

@@ -1,5 +1,4 @@
 #include "aracne.hpp"
-
 int main(int argc, char *argv[])
 {
     // argument check
@@ -67,7 +66,8 @@ int main(int argc, char *argv[])
 
         // rank data
         unsigned int *d_rankMat = subsample->getRankMatrix();
-#ifdef TEST
+        // unsigned int *d_rankMat = dataMat->getRankMatrix();
+#ifdef TEST_RANK
         Matrix<unsigned int> *h_ranked = new Matrix<unsigned int>(nGenes, nSamples);
         cudaMemcpy((void *)h_ranked->memAddr(), (void *)d_rankMat, h_ranked->size(), cudaMemcpyDeviceToHost);
         h_ranked->print();
